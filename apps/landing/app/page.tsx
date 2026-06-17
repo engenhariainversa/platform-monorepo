@@ -1,4 +1,4 @@
-import { Button } from '@repo/ui';
+import { Button } from "@repo/ui";
 
 export default function Page() {
   return (
@@ -8,7 +8,8 @@ export default function Page() {
           Engenhariainversa Landing Page
         </h1>
         <p className="text-lg text-slate-600">
-          This page is built in Next.js and uses visual components imported from our shared Monorepo UI system.
+          This page is built in Next.js and uses visual components imported from
+          our shared Monorepo UI system.
         </p>
         <div className="flex gap-4 justify-center">
           <Button variant="primary">Explore Features</Button>

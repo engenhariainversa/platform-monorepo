@@ -1,9 +1,9 @@
-import './globals.css';
-import type { Metadata } from 'next';
+import "./globals.css";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Engenhariainversa - Landing Page',
-  description: 'Welcome to our Next.js Landing Page',
+  title: "Engenhariainversa - Landing Page",
+  description: "Welcome to our Next.js Landing Page",
 };
 
 export default function RootLayout({

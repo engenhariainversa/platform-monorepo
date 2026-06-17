@@ -1,5 +1,13 @@
-import { Resolver, Query, Mutation, Args, Field, ObjectType, ID } from '@nestjs/graphql';
-import { prisma } from '@repo/database';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Field,
+  ObjectType,
+  ID,
+} from "@nestjs/graphql";
+import { prisma } from "@repo/database";
 
 @ObjectType()
 class CmsPageType {
@@ -20,7 +28,7 @@ class CmsPageType {
 export class AppResolver {
   @Query(() => String)
   hello(): string {
-    return 'Welcome to Engenhariainversa NestJS CMS Backend!';
+    return "Welcome to Engenhariainversa NestJS CMS Backend!";
   }
 
   @Query(() => [CmsPageType])
@@ -30,9 +38,9 @@ export class AppResolver {
 
   @Mutation(() => CmsPageType)
   async createPage(
-    @Args('slug') slug: string,
-    @Args('title') title: string,
-    @Args('content') content: string,
+    @Args("slug") slug: string,
+    @Args("title") title: string,
+    @Args("content") content: string,
   ): Promise<CmsPageType> {
     return prisma.cmsPage.create({
       data: { slug, title, content },
