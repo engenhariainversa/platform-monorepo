@@ -92,3 +92,93 @@ export const DELETE_USER = `
     deleteUser(id: $id)
   }
 `;
+
+// ── Content: Live ───────────────────────────────────
+
+export const GET_LIVE = `
+  query GetLive {
+    live {
+      id
+      label
+      title
+      description
+      buttonText
+      buttonUrl
+      thumbnailUrl
+      isLive
+      viewersCount
+    }
+  }
+`;
+
+export const UPSERT_LIVE = `
+  mutation UpsertLive($input: UpsertLiveInput!) {
+    upsertLive(input: $input) {
+      id
+      label
+      title
+      description
+      buttonText
+      buttonUrl
+      thumbnailUrl
+      isLive
+      viewersCount
+    }
+  }
+`;
+
+// ── Content: Episodes ───────────────────────────────
+
+export const GET_EPISODES = `
+  query GetEpisodes {
+    episodes {
+      id
+      module
+      title
+      duration
+      imageUrl
+      order
+    }
+  }
+`;
+
+export const CREATE_EPISODE = `
+  mutation CreateEpisode($input: CreateEpisodeInput!) {
+    createEpisode(input: $input) {
+      id
+      module
+      title
+      duration
+      imageUrl
+      order
+    }
+  }
+`;
+
+export const UPDATE_EPISODE = `
+  mutation UpdateEpisode($id: String!, $input: UpdateEpisodeInput!) {
+    updateEpisode(id: $id, input: $input) {
+      id
+      module
+      title
+      duration
+      imageUrl
+      order
+    }
+  }
+`;
+
+export const DELETE_EPISODE = `
+  mutation DeleteEpisode($id: String!) {
+    deleteEpisode(id: $id)
+  }
+`;
+
+export const REORDER_EPISODES = `
+  mutation ReorderEpisodes($ids: [String!]!) {
+    reorderEpisodes(ids: $ids) {
+      id
+      order
+    }
+  }
+`;

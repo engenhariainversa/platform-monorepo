@@ -32,6 +32,7 @@ services:
     volumes:
       - ./apps/backend/src:/app/apps/backend/src
       - ./packages/database:/app/packages/database
+      - uploads:/app/apps/backend/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -75,3 +76,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

@@ -37,3 +37,32 @@ model CmsPage {
 
   @@map("cms_pages")
 }
+
+model Live {
+  id           String   @id @default(uuid())
+  label        String   @default("PRÓXIMA ETAPA DO PIPELINE")
+  title        String
+  description  String
+  buttonText   String   @default("Entrar na Live") @map("button_text")
+  buttonUrl    String   @default("#") @map("button_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  isLive       Boolean  @default(false) @map("is_live")
+  viewersCount String   @default("0") @map("viewers_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("lives")
+}
+
+model Episode {
+  id        String   @id @default(uuid())
+  module    String
+  title     String
+  duration  String
+  imageUrl  String?  @map("image_url")
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("episodes")
+}

@@ -36,6 +36,31 @@ type AuthPayload {
   user: UserType!
 }
 
+type LiveType {
+  id: ID!
+  label: String!
+  title: String!
+  description: String!
+  buttonText: String!
+  buttonUrl: String!
+  thumbnailUrl: String
+  isLive: Boolean!
+  viewersCount: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EpisodeType {
+  id: ID!
+  module: String!
+  title: String!
+  duration: String!
+  imageUrl: String
+  order: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type Query {
   hello: String!
   pages: [CmsPageType!]!
@@ -43,6 +68,8 @@ type Query {
   user(id: String!): UserType
   hasAdmin: Boolean!
   me: UserType!
+  live: LiveType
+  episodes: [EpisodeType!]!
 }
 
 type Mutation {
@@ -53,6 +80,11 @@ type Mutation {
   deleteUser(id: String!): Boolean!
   login(input: LoginInput!): AuthPayload!
   setupAdmin(input: SetupAdminInput!): AuthPayload!
+  upsertLive(input: UpsertLiveInput!): LiveType!
+  createEpisode(input: CreateEpisodeInput!): EpisodeType!
+  updateEpisode(id: String!, input: UpdateEpisodeInput!): EpisodeType!
+  deleteEpisode(id: String!): Boolean!
+  reorderEpisodes(ids: [String!]!): [EpisodeType!]!
 }
 
 input CreateUserInput {
@@ -82,4 +114,31 @@ input SetupAdminInput {
   email: String!
   username: String!
   password: String!
+}
+
+input UpsertLiveInput {
+  label: String!
+  title: String!
+  description: String!
+  buttonText: String!
+  buttonUrl: String!
+  thumbnailUrl: String
+  isLive: Boolean!
+  viewersCount: String!
+}
+
+input CreateEpisodeInput {
+  module: String!
+  title: String!
+  duration: String!
+  imageUrl: String
+  order: Int
+}
+
+input UpdateEpisodeInput {
+  module: String
+  title: String
+  duration: String
+  imageUrl: String
+  order: Int
 }

@@ -44,3 +44,40 @@ export function removeAuthCookie() {
 export function isAuthenticated(): boolean {
   return !!getTokenFromCookie();
 }
+
+const UPLOAD_URL =
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4050/graphql").replace(
+    "/graphql",
+    "",
+  ) + "/uploads";
+
+export async function uploadFile(
+  file: File,
+): Promise<{ url: string; filename: string }> {
+  const token = getTokenFromCookie();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(UPLOAD_URL, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.message || "Erro ao fazer upload");
+  }
+
+  return res.json();
+}
+
+export function getUploadUrl(path: string): string {
+  if (path.startsWith("http")) return path;
+  const base = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4050/graphql"
+  ).replace("/graphql", "");
+  return `${base}${path}`;
+}

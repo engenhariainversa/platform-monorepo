@@ -17,7 +17,8 @@ type User = {
 };
 
 const menuItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "📊" },
+  { label: "Dashboard", href: "/dashboard", icon: "📊", exact: true },
+  { label: "Conteúdo", href: "/dashboard/content", icon: "🎬" },
   { label: "Usuários", href: "/dashboard/users", icon: "👥", roles: ["ADMIN", "MANAGER"] },
   { label: "Páginas", href: "/dashboard/pages", icon: "📄" },
   { label: "Configurações", href: "/dashboard/settings", icon: "⚙️", roles: ["ADMIN"] },
@@ -84,7 +85,7 @@ export default function DashboardLayout({
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                pathname === item.href
+                (item.exact ? pathname === item.href : pathname.startsWith(item.href))
                   ? "bg-primary/15 text-primary font-bold"
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
               }`}
