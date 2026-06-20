@@ -1,18 +1,5 @@
-import {
-  Field,
-  ObjectType,
-  ID,
-  InputType,
-  registerEnumType,
-} from "@nestjs/graphql";
-
-export enum Role {
-  ADMIN = "ADMIN",
-  MANAGER = "MANAGER",
-  AUTHENTICATED = "AUTHENTICATED",
-}
-
-registerEnumType(Role, { name: "Role" });
+import { Field, ObjectType, ID, InputType } from "@nestjs/graphql";
+import { RoleType } from "../roles/roles.types";
 
 @ObjectType()
 export class UserType {
@@ -31,8 +18,11 @@ export class UserType {
   @Field()
   username!: string;
 
-  @Field(() => Role)
-  role!: Role;
+  @Field()
+  roleId!: string;
+
+  @Field(() => RoleType)
+  role!: RoleType;
 
   @Field()
   createdAt!: Date;
@@ -58,8 +48,8 @@ export class CreateUserInput {
   @Field()
   password!: string;
 
-  @Field(() => Role, { nullable: true, defaultValue: Role.AUTHENTICATED })
-  role?: Role;
+  @Field({ nullable: true })
+  roleName?: string;
 }
 
 @InputType()
@@ -73,6 +63,6 @@ export class UpdateUserInput {
   @Field({ nullable: true })
   email?: string;
 
-  @Field(() => Role, { nullable: true })
-  role?: Role;
+  @Field({ nullable: true })
+  roleName?: string;
 }

@@ -8,6 +8,8 @@ import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
 import { ContentModule } from "./content/content.module";
 import { UploadModule } from "./upload/upload.module";
+import { RolesModule } from "./roles/roles.module";
+import { PermissionsModule } from "./permissions/permissions.module";
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { UploadModule } from "./upload/upload.module";
         res,
       }),
     }),
+    RolesModule,
+    PermissionsModule,
     UsersModule,
     AuthModule,
     ContentModule,

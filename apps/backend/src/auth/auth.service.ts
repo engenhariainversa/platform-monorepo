@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UsersService } from "../users/users.service";
-import { Role } from "../users/users.types";
 
 @Injectable()
 export class AuthService {
@@ -27,7 +26,7 @@ export class AuthService {
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role.name,
     });
 
     return { token, user };
@@ -49,13 +48,13 @@ export class AuthService {
 
     const user = await this.usersService.create({
       ...input,
-      role: Role.ADMIN,
+      roleName: "ADMIN",
     });
 
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role.name,
     });
 
     return { token, user };

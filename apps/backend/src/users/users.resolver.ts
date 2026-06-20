@@ -1,9 +1,9 @@
 import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { UserType, CreateUserInput, UpdateUserInput, Role } from "./users.types";
+import { UserType, CreateUserInput, UpdateUserInput } from "./users.types";
 import { GqlAuthGuard } from "../auth/auth.guard";
-import { Roles } from "../common/roles.decorator";
+import { Resource } from "../common/roles.decorator";
 import { RolesGuard } from "../common/roles.guard";
 
 @Resolver(() => UserType)
@@ -12,7 +12,7 @@ export class UsersResolver {
 
   @Query(() => [UserType])
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Resource("users", "read")
   async users(): Promise<UserType[]> {
     return this.usersService.findAll() as unknown as UserType[];
   }
@@ -25,14 +25,14 @@ export class UsersResolver {
 
   @Mutation(() => UserType)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Resource("users", "create")
   async createUser(@Args("input") input: CreateUserInput): Promise<UserType> {
     return this.usersService.create(input) as unknown as UserType;
   }
 
   @Mutation(() => UserType)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Resource("users", "update")
   async updateUser(
     @Args("id") id: string,
     @Args("input") input: UpdateUserInput,
@@ -42,17 +42,17 @@ export class UsersResolver {
 
   @Mutation(() => UserType)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Resource("users", "update")
   async updateUserRole(
     @Args("id") id: string,
-    @Args("role", { type: () => Role }) role: Role,
+    @Args("roleName") roleName: string,
   ): Promise<UserType> {
-    return this.usersService.updateRole(id, role) as unknown as UserType;
+    return this.usersService.updateRole(id, roleName) as unknown as UserType;
   }
 
   @Mutation(() => Boolean)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Resource("users", "delete")
   async deleteUser(@Args("id") id: string): Promise<boolean> {
     await this.usersService.delete(id);
     return true;

@@ -1,11 +1,22 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@repo/database";
 import * as bcrypt from "bcryptjs";
-import { CreateUserInput, UpdateUserInput, Role } from "./users.types";
+import { CreateUserInput, UpdateUserInput } from "./users.types";
+
+const USER_INCLUDE = { role: true };
 
 @Injectable()
 export class UsersService {
   async create(input: CreateUserInput) {
+    const roleName = input.roleName || "AUTHENTICATED";
+    const role = await prisma.role.findUnique({
+      where: { name: roleName },
+    });
+
+    if (!role) {
+      throw new Error(`Role "${roleName}" não encontrada`);
+    }
+
     const hashedPassword = await bcrypt.hash(input.password, 12);
     return prisma.user.create({
       data: {
@@ -14,27 +25,38 @@ export class UsersService {
         email: input.email,
         username: input.username,
         password: hashedPassword,
-        role: input.role || "AUTHENTICATED",
+        roleId: role.id,
       },
+      include: USER_INCLUDE,
     });
   }
 
   async findAll() {
     return prisma.user.findMany({
       orderBy: { createdAt: "desc" },
+      include: USER_INCLUDE,
     });
   }
 
   async findById(id: string) {
-    return prisma.user.findUnique({ where: { id } });
+    return prisma.user.findUnique({
+      where: { id },
+      include: USER_INCLUDE,
+    });
   }
 
   async findByEmail(email: string) {
-    return prisma.user.findUnique({ where: { email } });
+    return prisma.user.findUnique({
+      where: { email },
+      include: USER_INCLUDE,
+    });
   }
 
   async findByUsername(username: string) {
-    return prisma.user.findUnique({ where: { username } });
+    return prisma.user.findUnique({
+      where: { username },
+      include: USER_INCLUDE,
+    });
   }
 
   async findByEmailOrUsername(identifier: string) {
@@ -42,25 +64,42 @@ export class UsersService {
       where: {
         OR: [{ email: identifier }, { username: identifier }],
       },
+      include: USER_INCLUDE,
     });
   }
 
   async update(id: string, input: UpdateUserInput) {
+    const data: Record<string, unknown> = {};
+
+    if (input.firstName) data.firstName = input.firstName;
+    if (input.lastName) data.lastName = input.lastName;
+    if (input.email) data.email = input.email;
+
+    if (input.roleName) {
+      const role = await prisma.role.findUnique({
+        where: { name: input.roleName },
+      });
+      if (!role) throw new Error(`Role "${input.roleName}" não encontrada`);
+      data.roleId = role.id;
+    }
+
     return prisma.user.update({
       where: { id },
-      data: {
-        ...(input.firstName && { firstName: input.firstName }),
-        ...(input.lastName && { lastName: input.lastName }),
-        ...(input.email && { email: input.email }),
-        ...(input.role && { role: input.role }),
-      },
+      data,
+      include: USER_INCLUDE,
     });
   }
 
-  async updateRole(id: string, role: Role) {
+  async updateRole(id: string, roleName: string) {
+    const role = await prisma.role.findUnique({
+      where: { name: roleName },
+    });
+    if (!role) throw new Error(`Role "${roleName}" não encontrada`);
+
     return prisma.user.update({
       where: { id },
-      data: { role },
+      data: { roleId: role.id },
+      include: USER_INCLUDE,
     });
   }
 
@@ -73,7 +112,11 @@ export class UsersService {
   }
 
   async countAdmins() {
-    return prisma.user.count({ where: { role: "ADMIN" } });
+    const adminRole = await prisma.role.findUnique({
+      where: { name: "ADMIN" },
+    });
+    if (!adminRole) return 0;
+    return prisma.user.count({ where: { roleId: adminRole.id } });
   }
 
   async validatePassword(plaintext: string, hash: string): Promise<boolean> {
