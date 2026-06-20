@@ -16,7 +16,12 @@ export const SETUP_ADMIN = `
         lastName
         email
         username
-        role
+        role {
+          id
+          name
+          label
+          isAdmin
+        }
       }
     }
   }
@@ -32,7 +37,12 @@ export const LOGIN = `
         lastName
         email
         username
-        role
+        role {
+          id
+          name
+          label
+          isAdmin
+        }
       }
     }
   }
@@ -46,7 +56,12 @@ export const ME = `
       lastName
       email
       username
-      role
+      role {
+        id
+        name
+        label
+        isAdmin
+      }
     }
   }
 `;
@@ -59,7 +74,11 @@ export const GET_USERS = `
       lastName
       email
       username
-      role
+      role {
+        id
+        name
+        label
+      }
       createdAt
     }
   }
@@ -73,16 +92,24 @@ export const CREATE_USER = `
       lastName
       email
       username
-      role
+      role {
+        id
+        name
+        label
+      }
     }
   }
 `;
 
 export const UPDATE_USER_ROLE = `
-  mutation UpdateUserRole($id: String!, $role: Role!) {
-    updateUserRole(id: $id, role: $role) {
+  mutation UpdateUserRole($id: String!, $roleName: String!) {
+    updateUserRole(id: $id, roleName: $roleName) {
       id
-      role
+      role {
+        id
+        name
+        label
+      }
     }
   }
 `;
@@ -182,3 +209,82 @@ export const REORDER_EPISODES = `
     }
   }
 `;
+
+// ── Roles ───────────────────────────────────────────
+
+export const GET_ROLES = `
+  query GetRoles {
+    roles {
+      id
+      name
+      label
+      description
+      isSystem
+      isAdmin
+      userCount
+    }
+  }
+`;
+
+export const CREATE_ROLE = `
+  mutation CreateRole($input: CreateRoleInput!) {
+    createRole(input: $input) {
+      id
+      name
+      label
+      description
+    }
+  }
+`;
+
+export const UPDATE_ROLE = `
+  mutation UpdateRole($id: String!, $input: UpdateRoleInput!) {
+    updateRole(id: $id, input: $input) {
+      id
+      label
+      description
+    }
+  }
+`;
+
+export const DELETE_ROLE = `
+  mutation DeleteRole($id: String!) {
+    deleteRole(id: $id)
+  }
+`;
+
+// ── Permissions ─────────────────────────────────────
+
+export const GET_PERMISSIONS_FOR_ROLE = `
+  query GetPermissionsForRole($roleId: String!) {
+    permissionsForRole(roleId: $roleId) {
+      resource
+      create
+      read
+      update
+      delete
+    }
+  }
+`;
+
+export const GET_PUBLIC_RESOURCES = `
+  query GetPublicResources {
+    publicResources {
+      id
+      resource
+    }
+  }
+`;
+
+export const TOGGLE_PERMISSION = `
+  mutation TogglePermission($input: TogglePermissionInput!) {
+    togglePermission(input: $input)
+  }
+`;
+
+export const TOGGLE_PUBLIC_RESOURCE = `
+  mutation TogglePublicResource($input: TogglePublicResourceInput!) {
+    togglePublicResource(input: $input)
+  }
+`;
+

@@ -7,7 +7,14 @@ import {
   CREATE_USER,
   UPDATE_USER_ROLE,
   DELETE_USER,
+  GET_ROLES,
 } from "../../../lib/queries";
+
+type Role = {
+  id: string;
+  name: string;
+  label: string;
+};
 
 type User = {
   id: string;
@@ -15,7 +22,7 @@ type User = {
   lastName: string;
   email: string;
   username: string;
-  role: string;
+  role: Role;
   createdAt: string;
 };
 
@@ -27,6 +34,7 @@ const roleColors: Record<string, string> = {
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -37,13 +45,17 @@ export default function UsersPage() {
     email: "",
     username: "",
     password: "",
-    role: "AUTHENTICATED",
+    roleName: "AUTHENTICATED",
   });
 
   const fetchUsers = async () => {
     try {
-      const data = await graphqlRequest<{ users: User[] }>(GET_USERS);
-      setUsers(data.users);
+      const [usersData, rolesData] = await Promise.all([
+        graphqlRequest<{ users: User[] }>(GET_USERS),
+        graphqlRequest<{ roles: { id: string; name: string; label: string }[] }>(GET_ROLES),
+      ]);
+      setUsers(usersData.users);
+      setRoles(rolesData.roles);
     } catch (err) {
       console.error("Failed to fetch users", err);
     } finally {
@@ -66,7 +78,7 @@ export default function UsersPage() {
         email: "",
         username: "",
         password: "",
-        role: "AUTHENTICATED",
+        roleName: "AUTHENTICATED",
       });
       setShowForm(false);
       fetchUsers();
@@ -77,9 +89,9 @@ export default function UsersPage() {
     }
   };
 
-  const handleRoleChange = async (id: string, role: string) => {
+  const handleRoleChange = async (id: string, roleName: string) => {
     try {
-      await graphqlRequest(UPDATE_USER_ROLE, { id, role });
+      await graphqlRequest(UPDATE_USER_ROLE, { id, roleName });
       fetchUsers();
     } catch (err) {
       console.error("Failed to update role", err);
@@ -176,13 +188,15 @@ export default function UsersPage() {
               className="bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm"
             />
             <select
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              value={form.roleName}
+              onChange={(e) => setForm({ ...form, roleName: e.target.value })}
               className="bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm"
             >
-              <option value="AUTHENTICATED">Authenticated</option>
-              <option value="MANAGER">Manager</option>
-              <option value="ADMIN">Admin</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.name}>
+                  {r.label}
+                </option>
+              ))}
             </select>
           </div>
           {error && (
@@ -244,13 +258,15 @@ export default function UsersPage() {
                 </td>
                 <td className="px-6 py-4">
                   <select
-                    value={u.role}
+                    value={u.role.name}
                     onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                    className={`text-xs font-bold px-3 py-1 rounded-full border-0 cursor-pointer ${roleColors[u.role] || ""}`}
+                    className={`text-xs font-bold px-3 py-1 rounded-full border-0 cursor-pointer ${roleColors[u.role.name] || "bg-outline-variant/20 text-on-surface-variant"}`}
                   >
-                    <option value="AUTHENTICATED">Authenticated</option>
-                    <option value="MANAGER">Manager</option>
-                    <option value="ADMIN">Admin</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.name}>
+                        {r.label}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td className="px-6 py-4 text-right">

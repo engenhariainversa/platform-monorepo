@@ -13,7 +13,12 @@ type User = {
   lastName: string;
   email: string;
   username: string;
-  role: string;
+  role: {
+    id: string;
+    name: string;
+    label: string;
+    isAdmin: boolean;
+  };
 };
 
 const menuItems = [
@@ -63,7 +68,7 @@ export default function DashboardLayout({
 
   const filteredMenu = menuItems.filter((item) => {
     if (!item.roles) return true;
-    return user && item.roles.includes(user.role);
+    return user && item.roles.includes(user.role.name);
   });
 
   return (
@@ -108,7 +113,7 @@ export default function DashboardLayout({
                 {user?.firstName} {user?.lastName}
               </p>
               <p className="text-xs text-on-surface-variant truncate">
-                {user?.role}
+                {user?.role?.label}
               </p>
             </div>
           </div>
