@@ -7,11 +7,25 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  ADMIN
-  MANAGER
-  AUTHENTICATED
+// ── Roles ────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  label       String
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  isAdmin     Boolean  @default(false) @map("is_admin")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  permissions Permission[]
+
+  @@map("roles")
 }
+
+// ── Users ────────────────────────────────────────────
 
 model User {
   id        String   @id @default(uuid())
@@ -20,12 +34,35 @@ model User {
   email     String   @unique
   username  String   @unique
   password  String
-  role      Role     @default(AUTHENTICATED)
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("users")
 }
+
+// ── Permissions ──────────────────────────────────────
+
+model Permission {
+  id       String @id @default(uuid())
+  resource String
+  action   String
+  roleId   String @map("role_id")
+  role     Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([resource, action, roleId])
+  @@map("permissions")
+}
+
+model PublicResource {
+  id       String @id @default(uuid())
+  resource String @unique
+
+  @@map("public_resources")
+}
+
+// ── CMS Content ──────────────────────────────────────
 
 model CmsPage {
   id        String   @id @default(uuid())
