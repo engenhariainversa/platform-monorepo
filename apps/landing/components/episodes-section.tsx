@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@repo/ui";
 
 const episodes = [
   {

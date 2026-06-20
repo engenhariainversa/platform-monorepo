@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Play, Eye } from "lucide-react";
+import { Play, Eye } from "@repo/ui";
 
 export function LiveSection() {
   return (

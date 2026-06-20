@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { PlayCircle } from "lucide-react";
+import { PlayCircle } from "@repo/ui";
 
 export function Hero() {
   return (
