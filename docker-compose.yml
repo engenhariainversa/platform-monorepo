@@ -1,0 +1,66 @@
+services:
+  # ── PostgreSQL Database ─────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: engenharia
+      POSTGRES_PASSWORD: inversa_dev_2024
+      POSTGRES_DB: engenhariainversa
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U engenharia -d engenhariainversa"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Backend (NestJS + GraphQL) ──────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    ports:
+      - "4050:4050"
+    environment:
+      - NODE_ENV=production
+      - PORT=4050
+      - DATABASE_URL=postgresql://engenharia:inversa_dev_2024@db:5432/engenhariainversa
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── CMS (Next.js) ──────────────────────────────────────
+  cms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: cms
+    ports:
+      - "4051:4051"
+    environment:
+      - NODE_ENV=production
+      - PORT=4051
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ── Landing Page (Next.js) ──────────────────────────────
+  landing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: landing
+    ports:
+      - "4052:4052"
+    environment:
+      - NODE_ENV=production
+      - PORT=4052
+    restart: unless-stopped
+
+volumes:
+  pgdata:
