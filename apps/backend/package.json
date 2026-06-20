@@ -8,20 +8,30 @@
     "start": "nest start"
   },
   "dependencies": {
-    "@nestjs/apollo": "^12.1.0",
-    "@nestjs/common": "^10.3.8",
-    "@nestjs/core": "^10.3.8",
-    "@nestjs/graphql": "^12.1.1",
+    "@apollo/server": "^5.5.1",
+    "@as-integrations/express5": "^1.1.2",
+    "@nestjs/apollo": "^13",
+    "@nestjs/common": "^11",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11",
+    "@nestjs/graphql": "^13",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11",
     "@repo/database": "workspace:*",
-    "apollo-server-express": "^3.13.0",
-    "graphql": "^16.8.1",
+    "bcryptjs": "^3.0.3",
+    "graphql": "^16.14.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@nestjs/cli": "^10.3.2",
-    "@nestjs/schematics": "^10.1.1",
+    "@nestjs/cli": "^11",
+    "@nestjs/schematics": "^11",
     "@repo/tsconfig": "workspace:*",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/passport-jwt": "^4.0.1",
     "typescript": "^5.4.5"
   }
 }

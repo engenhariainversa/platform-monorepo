@@ -1,21 +1,48 @@
-import { Button } from "@repo/ui";
+"use client";
 
-export default function Page() {
-  return (
-    <main className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
-      <div className="max-w-xl text-center space-y-6">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white">
-          Engenhariainversa CMS
-        </h1>
-        <p className="text-lg text-slate-400">
-          This is the CMS administration dashboard. Create pages, edit fields,
-          and manage custom content pipelines.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Button variant="primary">Create New Page</Button>
-          <Button variant="secondary">View Dashboard</Button>
-        </div>
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { graphqlRequest, isAuthenticated } from "../lib/graphql-client";
+import { HAS_ADMIN } from "../lib/queries";
+
+export default function Home() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const data = await graphqlRequest<{ hasAdmin: boolean }>(HAS_ADMIN);
+
+        if (!data.hasAdmin) {
+          router.replace("/setup");
+          return;
+        }
+
+        if (!isAuthenticated()) {
+          router.replace("/login");
+          return;
+        }
+
+        router.replace("/dashboard");
+      } catch {
+        // If backend is down, show login
+        router.replace("/login");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkStatus();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
-    </main>
-  );
+    );
+  }
+
+  return null;
 }

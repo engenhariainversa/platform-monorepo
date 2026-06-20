@@ -2,6 +2,7 @@
 # Base — shared Node 20 + pnpm layer for all services
 # ============================================================
 FROM node:20-alpine AS base
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 WORKDIR /app
 

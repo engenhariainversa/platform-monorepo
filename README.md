@@ -96,9 +96,31 @@ pnpm --filter landing dev
 
 ---
 
+## 🐳 Rodando com Docker (Dev com Hot-Reload)
+
+Sobe todo o ambiente de desenvolvimento com hot-reload:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Os arquivos de código fonte são montados como volumes, então qualquer alteração local reflete automaticamente nos containers.
+
+Ou suba serviços individuais:
+
+```bash
+# Apenas DB + Backend
+docker compose -f docker-compose.dev.yml up db backend
+
+# Apenas DB + Landing
+docker compose -f docker-compose.dev.yml up db landing
+```
+
+---
+
 ## 🐳 Rodando com Docker (Produção)
 
-Sobe todos os serviços (DB + Backend + CMS + Landing) de uma vez:
+Sobe todos os serviços com build otimizado de produção:
 
 ```bash
 docker compose up --build

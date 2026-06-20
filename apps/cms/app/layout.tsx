@@ -2,8 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Engenhariainversa - CMS System",
-  description: "Manage your CMS data and pages",
+  title: "Engenharia Inversa — CMS",
+  description: "Painel administrativo da plataforma Engenharia Inversa",
 };
 
 export default function RootLayout({
@@ -12,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-slate-900 text-slate-100 font-sans min-h-screen">
+    <html lang="pt-BR" className="dark">
+      <body className="bg-surface text-on-surface font-body min-h-screen">
         {children}
       </body>
     </html>
