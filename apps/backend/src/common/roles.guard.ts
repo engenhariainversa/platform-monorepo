@@ -1,35 +1,57 @@
 import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { GqlExecutionContext } from "@nestjs/graphql";
-import { ROLES_KEY } from "./roles.decorator";
-import { Role } from "../users/users.types";
+import { ROLES_KEY, RESOURCE_KEY } from "./roles.decorator";
+import { PermissionsService } from "../permissions/permissions.service";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private permissionsService: PermissionsService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const ctx = GqlExecutionContext.create(context);
+    const user = ctx.getContext().req?.user;
+
+    // ── Check @Resource() decorator (new dynamic system) ──
+    const resourceMeta = this.reflector.getAllAndOverride<{
+      resource: string;
+      action: string;
+    }>(RESOURCE_KEY, [context.getHandler(), context.getClass()]);
+
+    if (resourceMeta) {
+      const userRole = user?.role
+        ? { id: user.role.id, isAdmin: user.role.isAdmin }
+        : undefined;
+
+      return this.permissionsService.canAccess(
+        resourceMeta.resource,
+        resourceMeta.action,
+        userRole,
+      );
+    }
+
+    // ── Fallback: check @Roles() decorator (legacy) ──
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredRoles) {
       return true;
     }
 
-    const ctx = GqlExecutionContext.create(context);
-    const user = ctx.getContext().req.user;
-
     if (!user) {
       return false;
     }
 
-    // ADMIN always has access
-    if (user.role === Role.ADMIN) {
+    // Admin (isAdmin flag) always has access
+    if (user.role?.isAdmin) {
       return true;
     }
 
-    return requiredRoles.includes(user.role);
+    return requiredRoles.includes(user.role?.name);
   }
 }

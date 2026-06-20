@@ -10,8 +10,7 @@ import {
 } from "./content.types";
 import { GqlAuthGuard } from "../auth/auth.guard";
 import { RolesGuard } from "../common/roles.guard";
-import { Roles } from "../common/roles.decorator";
-import { Role } from "../users/users.types";
+import { Resource } from "../common/roles.decorator";
 
 @Resolver()
 export class ContentResolver {
@@ -26,7 +25,7 @@ export class ContentResolver {
 
   @Mutation(() => LiveType)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Resource("live", "update")
   async upsertLive(@Args("input") input: UpsertLiveInput) {
     return this.contentService.upsertLive(input);
   }
@@ -40,14 +39,14 @@ export class ContentResolver {
 
   @Mutation(() => EpisodeType)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Resource("episodes", "create")
   async createEpisode(@Args("input") input: CreateEpisodeInput) {
     return this.contentService.createEpisode(input);
   }
 
   @Mutation(() => EpisodeType)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Resource("episodes", "update")
   async updateEpisode(
     @Args("id") id: string,
     @Args("input") input: UpdateEpisodeInput,
@@ -57,14 +56,14 @@ export class ContentResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Resource("episodes", "delete")
   async deleteEpisode(@Args("id") id: string) {
     return this.contentService.deleteEpisode(id);
   }
 
   @Mutation(() => [EpisodeType])
   @UseGuards(GqlAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Resource("episodes", "update")
   async reorderEpisodes(@Args("ids", { type: () => [String] }) ids: string[]) {
     return this.contentService.reorderEpisodes(ids);
   }
