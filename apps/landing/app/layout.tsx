@@ -2,8 +2,9 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Engenhariainversa - Landing Page",
-  description: "Welcome to our Next.js Landing Page",
+  title: "Engenharia Inversa | Build in Public Mobile School",
+  description:
+    "A primeira escola de mobile focada em engenharia real e processos transparentes. Acompanhe os bastidores técnicos reais da nossa jornada Build in Public.",
 };
 
 export default function RootLayout({
@@ -12,10 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-slate-50 text-slate-900 font-sans min-h-screen">
-        {children}
-      </body>
+    <html lang="pt-BR" className="dark">
+      <body className="technical-grid min-h-screen">{children}</body>
     </html>
   );
 }

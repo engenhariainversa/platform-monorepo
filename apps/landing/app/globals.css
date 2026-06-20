@@ -1,3 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Hanken+Grotesk:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-body;
+    font-feature-settings: "liga" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Technical dot grid background */
+  .technical-grid {
+    background-image: radial-gradient(rgba(164, 140, 125, 0.1) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Pipeline gradient line */
+  .pipeline-line {
+    background: linear-gradient(90deg, #ffb783 0%, #ebbf01 50%, #243648 100%);
+  }
+
+  /* Glow effect on hover */
+  .glow-primary {
+    transition: box-shadow 0.3s ease;
+  }
+  .glow-primary:hover {
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.4);
+  }
+
+  /* Float animation for mascot */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Line clamp for card text */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
