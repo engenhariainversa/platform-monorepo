@@ -5,7 +5,7 @@ export function Hero() {
   return (
     <section
       id="hero"
-      className="pt-[100px] pb-lg md:pt-xl md:pb-xl px-margin-mobile md:px-margin-desktop md:min-h-[80vh] flex items-center relative overflow-hidden"
+      className="pt-[140px] pb-lg md:pt-xl md:pb-xl px-margin-mobile md:px-margin-desktop md:min-h-[80vh] flex items-center relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-lg md:gap-xl items-center relative z-10">
         {/* Mascot — appears FIRST on mobile (above text), SECOND on desktop (right side) */}
