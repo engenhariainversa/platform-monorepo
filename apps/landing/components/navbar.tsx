@@ -19,7 +19,7 @@ export function Navbar() {
       className="fixed top-0 w-full z-50 border-b border-outline-variant bg-background/80 backdrop-blur-md"
     >
       {/* Top bar */}
-      <div className="h-20 px-margin-mobile md:px-margin-desktop flex justify-between items-center">
+      <div className="h-20 px-margin-mobile md:px-margin-desktop flex justify-between items-center max-w-7xl mx-auto w-full">
         {/* Logo */}
         <div className="flex items-center gap-sm">
           <Image
