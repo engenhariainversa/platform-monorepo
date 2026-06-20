@@ -17,17 +17,21 @@ export function Navbar() {
       className="fixed top-0 w-full z-50 border-b border-outline-variant bg-background/80 backdrop-blur-md h-20 px-margin-mobile md:px-margin-desktop flex justify-between items-center"
     >
       {/* Logo */}
-      <div className="flex items-center gap-base">
+      <div className="flex items-center gap-sm">
         <Image
-          src="/images/logo-mascot.png"
+          src="/images/engenharia-inversa-logo.svg"
           alt="Logo Engenharia Inversa"
           width={40}
           height={40}
           className="h-10 w-10 object-contain"
         />
-        <span className="text-headline-lg font-headline font-black text-primary uppercase tracking-tighter hidden sm:inline">
-          Engenharia Inversa
-        </span>
+        <Image
+          src="/images/engenharia-inversa.svg"
+          alt="Engenharia Inversa"
+          width={160}
+          height={32}
+          className="h-7 w-auto object-contain hidden sm:block"
+        />
       </div>
 
       {/* Navigation Links */}

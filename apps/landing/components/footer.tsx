@@ -23,17 +23,21 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-12 gap-gutter">
         {/* Branding */}
         <div className="md:col-span-4 space-y-md">
-          <div className="flex items-center gap-base">
+          <div className="flex items-center gap-sm">
             <Image
-              src="/images/logo-mascot.png"
+              src="/images/engenharia-inversa-logo.svg"
               alt="Logo Engenharia Inversa"
               width={32}
               height={32}
               className="h-8 w-8"
             />
-            <span className="font-code text-code-sm text-primary uppercase tracking-widest font-bold">
-              Engenharia Inversa
-            </span>
+            <Image
+              src="/images/engenharia-inversa.svg"
+              alt="Engenharia Inversa"
+              width={140}
+              height={28}
+              className="h-6 w-auto object-contain"
+            />
           </div>
           <p className="font-body text-on-surface-variant text-sm">
             A primeira escola de mobile focada em engenharia real e processos
