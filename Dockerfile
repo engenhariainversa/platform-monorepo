@@ -24,27 +24,38 @@ FROM deps AS source
 COPY . .
 
 # ============================================================
+# Database package — generate Prisma client + compile TS
+# ============================================================
+FROM source AS database-build
+RUN pnpm --filter @repo/database build
+
+# ============================================================
 # Backend (NestJS — port 4050)
 # ============================================================
-FROM source AS backend-build
+FROM database-build AS backend-build
 RUN pnpm --filter backend build
 
 FROM base AS backend
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
+COPY --from=database-build /app/packages/database/dist ./packages/database/dist
 COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=backend-build /app/apps/backend/dist ./apps/backend/dist
 COPY apps/backend/package.json ./apps/backend/package.json
+COPY packages/database/package.json ./packages/database/package.json
+COPY packages/database/prisma ./packages/database/prisma
 COPY package.json pnpm-workspace.yaml ./
 ENV PORT=4050
 EXPOSE 4050
-CMD ["node", "apps/backend/dist/main.js"]
+CMD ["sh", "-c", "npx -y prisma db push --schema=packages/database/prisma/schema.prisma --skip-generate && node apps/backend/dist/main.js"]
 
 # ============================================================
 # CMS (Next.js — port 4051)
 # ============================================================
-FROM source AS cms-build
+FROM database-build AS cms-build
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL=http://localhost:4050/graphql
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm --filter @repo/ui build 2>/dev/null || true
 RUN pnpm --filter cms build
 

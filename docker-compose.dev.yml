@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: pnpm --filter backend dev
+    command: sh -c "pnpm --filter @repo/database build && pnpm --filter @repo/database db:push && pnpm --filter backend dev"
     ports:
       - "4050:4050"
     environment:
@@ -36,6 +36,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const s = require('net').createConnection(4050, 'localhost'); s.on('connect', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1));\""]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   # ── CMS (Next.js — dev with hot-reload) ─────────────────
   cms:
@@ -55,7 +61,8 @@ services:
       - ./apps/cms/components:/app/apps/cms/components
       - ./packages/ui/src:/app/packages/ui/src
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   # ── Landing Page (Next.js — dev with hot-reload) ────────
   landing:

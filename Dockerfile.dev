@@ -20,5 +20,5 @@ RUN pnpm install --frozen-lockfile
 # Copy full source (volumes will override in dev)
 COPY . .
 
-# Generate Prisma client
-RUN pnpm --filter @repo/database db:generate
+# Generate Prisma client AND compile the database package
+RUN pnpm --filter @repo/database build

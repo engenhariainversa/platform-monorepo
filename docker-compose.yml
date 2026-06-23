@@ -29,9 +29,18 @@ services:
       - NODE_ENV=production
       - PORT=4050
       - DATABASE_URL=postgresql://engenharia:inversa_dev_2024@db:5432/engenhariainversa
+      - JWT_SECRET=ei-dev-secret-change-in-production-2024
+    volumes:
+      - uploads:/app/apps/backend/uploads
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const s = require('net').createConnection(4050, 'localhost'); s.on('connect', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1));\""]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
     restart: unless-stopped
 
   # ── CMS (Next.js) ──────────────────────────────────────
@@ -40,13 +49,17 @@ services:
       context: .
       dockerfile: Dockerfile
       target: cms
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:4050/graphql
     ports:
       - "4051:4051"
     environment:
       - NODE_ENV=production
       - PORT=4051
+      - NEXT_PUBLIC_API_URL=http://localhost:4050/graphql
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   # ── Landing Page (Next.js) ──────────────────────────────
@@ -64,3 +77,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:
