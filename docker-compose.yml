@@ -28,6 +28,7 @@ services:
       - PORT=4050
       - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - CORS_ORIGINS=https://cms.engenhariainversa.com.br,https://engenhariainversa.com.br,https://www.engenhariainversa.com.br
     volumes:
       - uploads:/app/apps/backend/uploads
     depends_on:
