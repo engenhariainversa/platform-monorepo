@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and start services
+      - name: Write .env from secrets
         env:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -25,6 +25,18 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: |
+          {
+            printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER"
+            printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD"
+            printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB"
+            printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+            printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+            printf 'NEXT_PUBLIC_API_URL=%s\n' "$NEXT_PUBLIC_API_URL"
+          } > .env
+          chmod 600 .env
+
+      - name: Build and start services
         run: docker compose -f docker-compose.yml up --build -d --remove-orphans
 
       - name: Wait for backend to be healthy
