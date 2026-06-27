@@ -47,7 +47,7 @@ COPY packages/database/prisma ./packages/database/prisma
 COPY package.json pnpm-workspace.yaml ./
 ENV PORT=4050
 EXPOSE 4050
-CMD ["sh", "-c", "npx -y prisma db push --schema=packages/database/prisma/schema.prisma --skip-generate && node apps/backend/dist/main.js"]
+CMD ["sh", "-c", "pnpm --filter @repo/database db:migrate:deploy && pnpm --filter @repo/database db:seed && node apps/backend/dist/main.js"]
 
 # ============================================================
 # CMS (Next.js — port 4051)

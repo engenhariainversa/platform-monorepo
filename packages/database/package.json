@@ -7,8 +7,13 @@
   "scripts": {
     "build": "prisma generate && tsc",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:push": "echo '\\n❌ db:push is DISABLED. It bypasses migration history and desyncs prod.\\n   Use:  pnpm --filter @repo/database db:migrate:dev --name <descriptive>\\n' && exit 1",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:resolve": "prisma migrate resolve",
+    "db:migrate:check": "prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code || (echo '\\n❌ DB schema drifts from schema.prisma — someone bypassed migrations (likely with db push).\\n   Fix by generating a migration:  pnpm --filter @repo/database db:migrate:dev --name <descriptive>\\n' && exit 1)"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

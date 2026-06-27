@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: sh -c "pnpm --filter @repo/database build && pnpm --filter @repo/database db:push && pnpm --filter backend dev"
+    command: sh -c "pnpm --filter @repo/database build && pnpm --filter @repo/database db:migrate:deploy && pnpm --filter @repo/database db:seed && pnpm --filter backend dev"
     ports:
       - "4050:4050"
     environment:

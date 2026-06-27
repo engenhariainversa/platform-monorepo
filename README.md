@@ -70,8 +70,11 @@ Aguarde o healthcheck confirmar que o Postgres está pronto.
 # Gera o client do Prisma
 pnpm --filter @repo/database db:generate
 
-# Aplica o schema no banco
-pnpm --filter @repo/database db:push
+# Aplica todas as migrations pendentes
+pnpm --filter @repo/database db:migrate:deploy
+
+# Popula roles do sistema (ADMIN, MANAGER, AUTHENTICATED) e recursos públicos
+pnpm --filter @repo/database db:seed
 ```
 
 ### 6. Rode o projeto
@@ -191,15 +194,29 @@ pnpm clean
 
 ## 🗄 Banco de Dados
 
-O projeto usa **PostgreSQL 16** com **Prisma ORM**.
+O projeto usa **PostgreSQL 16** com **Prisma ORM** e migrations versionadas.
 
 ```bash
 # Gerar o Prisma client
 pnpm --filter @repo/database db:generate
 
-# Push do schema para o banco
-pnpm --filter @repo/database db:push
+# Aplicar migrations pendentes (usado em dev e prod)
+pnpm --filter @repo/database db:migrate:deploy
+
+# Criar uma nova migration a partir de mudanças no schema.prisma (somente dev)
+pnpm --filter @repo/database db:migrate:dev --name <nome_descritivo>
+
+# Ver status das migrations
+pnpm --filter @repo/database db:migrate:status
+
+# Popular roles do sistema + recursos públicos (idempotente)
+pnpm --filter @repo/database db:seed
 ```
+
+> **⚠️ Banco já existente?** Se você já criou tabelas com `db:push` antes, é necessário fazer baseline da migration inicial uma única vez:
+> ```bash
+> pnpm --filter @repo/database db:migrate:resolve --applied 20260626000000_init
+> ```
 
 ### Credenciais Dev (Docker Compose)
 
