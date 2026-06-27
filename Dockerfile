@@ -36,10 +36,10 @@ FROM database-build AS backend-build
 RUN pnpm --filter backend build
 
 FROM base AS backend
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages ./packages
+COPY --from=database-build /app/node_modules ./node_modules
+COPY --from=database-build /app/packages ./packages
 COPY --from=database-build /app/packages/database/dist ./packages/database/dist
-COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
+COPY --from=database-build /app/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=backend-build /app/apps/backend/dist ./apps/backend/dist
 COPY apps/backend/package.json ./apps/backend/package.json
 COPY packages/database/package.json ./packages/database/package.json
