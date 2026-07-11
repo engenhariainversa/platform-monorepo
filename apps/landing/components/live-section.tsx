@@ -19,7 +19,14 @@ const FALLBACK: LiveData = {
 };
 
 export function LiveSection() {
-  const { data: queryData } = useQuery<{ live: LiveData | null }>(GET_LIVE);
+  const { data: queryData, loading } = useQuery<{ live: LiveData | null }>(
+    GET_LIVE,
+  );
+
+  if (loading) {
+    return <LiveSectionSkeleton />;
+  }
+
   const data = queryData?.live ?? FALLBACK;
   const thumbnailSrc = data.thumbnailUrl
     ? getUploadUrl(data.thumbnailUrl)
@@ -75,6 +82,39 @@ export function LiveSection() {
             >
               {data.buttonText}
             </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Placeholder shown while the live content is being fetched. Mirrors the real
+// layout so the section doesn't shift once data arrives.
+function LiveSectionSkeleton() {
+  return (
+    <section
+      id="live"
+      aria-hidden="true"
+      className="px-margin-mobile md:px-margin-desktop pb-xl"
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant flex flex-col md:flex-row items-stretch shadow-2xl animate-pulse">
+          {/* Thumbnail placeholder */}
+          <div className="md:w-1/2 aspect-video bg-surface-container-highest" />
+
+          {/* Info placeholder */}
+          <div className="md:w-1/2 p-lg flex flex-col justify-center space-y-md">
+            <div className="space-y-xs">
+              <div className="h-3 w-2/5 rounded bg-surface-container-highest" />
+              <div className="h-7 w-11/12 rounded bg-surface-container-highest" />
+              <div className="h-7 w-3/4 rounded bg-surface-container-highest" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-full rounded bg-surface-container-highest" />
+              <div className="h-4 w-5/6 rounded bg-surface-container-highest" />
+            </div>
+            <div className="h-12 w-48 rounded-lg bg-surface-container-highest" />
           </div>
         </div>
       </div>
