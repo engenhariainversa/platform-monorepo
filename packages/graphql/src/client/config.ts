@@ -8,15 +8,12 @@
  *   - `GRAPHQL_PATH` — the endpoint path appended to `BASE_URL`
  * so uploads can reuse the host without carrying the `/graphql` suffix.
  */
-export const GRAPHQL_PATH = process.env.NEXT_PUBLIC_GRAPHQL_PATH || "/graphql";
 
-const CONFIGURED_URL =
-  process.env.NEXT_PUBLIC_API_URL || `http://localhost:4050${GRAPHQL_PATH}`;
+/** Host serving both GraphQL and uploads, e.g. `http://localhost:4050`. */
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-/** API/upload host without the GraphQL path, e.g. `http://localhost:4050`. */
-export const BASE_URL = CONFIGURED_URL.endsWith(GRAPHQL_PATH)
-  ? CONFIGURED_URL.slice(0, -GRAPHQL_PATH.length)
-  : CONFIGURED_URL;
+/** Endpoint path appended to `BASE_URL`, e.g. `/graphql`. */
+export const GRAPHQL_PATH = process.env.NEXT_PUBLIC_GRAPHQL_PATH ?? "";
 
 /** Fully-qualified GraphQL endpoint, `BASE_URL` + `GRAPHQL_PATH`. */
 export const GRAPHQL_URL = `${BASE_URL}${GRAPHQL_PATH}`;
