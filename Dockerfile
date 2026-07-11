@@ -54,8 +54,10 @@ CMD ["sh", "-c", "pnpm --filter @repo/database db:migrate:deploy && pnpm --filte
 # ============================================================
 FROM database-build AS cms-build
 ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_API_URL=http://localhost:4050/graphql
+ARG NEXT_PUBLIC_API_URL=http://localhost:4050
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_GRAPHQL_PATH=/graphql
+ENV NEXT_PUBLIC_GRAPHQL_PATH=$NEXT_PUBLIC_GRAPHQL_PATH
 RUN pnpm --filter @repo/ui build 2>/dev/null || true
 RUN pnpm --filter cms build
 
@@ -79,6 +81,10 @@ CMD ["npx", "next", "start", "--port", "4051"]
 # ============================================================
 FROM source AS landing-build
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL=http://localhost:4050
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_GRAPHQL_PATH=/graphql
+ENV NEXT_PUBLIC_GRAPHQL_PATH=$NEXT_PUBLIC_GRAPHQL_PATH
 RUN pnpm --filter @repo/ui build 2>/dev/null || true
 RUN pnpm --filter landing build
 

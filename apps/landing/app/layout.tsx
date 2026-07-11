@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { ApolloWrapper } from "@repo/graphql/react";
 
 export const metadata: Metadata = {
   title: "Engenharia Inversa | Build in Public Mobile School",
@@ -14,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className="technical-grid min-h-screen">{children}</body>
+      <body className="technical-grid min-h-screen">
+        <ApolloWrapper>{children}</ApolloWrapper>
+      </body>
     </html>
   );
 }

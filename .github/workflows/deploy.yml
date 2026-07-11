@@ -25,6 +25,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_GRAPHQL_PATH: ${{ secrets.NEXT_PUBLIC_GRAPHQL_PATH }}
         run: |
           mkdir -p /opt/engenhariainversa
           {
@@ -34,6 +35,7 @@ jobs:
             printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
             printf 'NEXT_PUBLIC_API_URL=%s\n' "$NEXT_PUBLIC_API_URL"
+            printf 'NEXT_PUBLIC_GRAPHQL_PATH=%s\n' "$NEXT_PUBLIC_GRAPHQL_PATH"
           } > /opt/engenhariainversa/.env
           chmod 600 /opt/engenhariainversa/.env
 

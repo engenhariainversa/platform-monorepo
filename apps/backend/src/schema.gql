@@ -49,10 +49,13 @@ type LiveType {
   title: String!
   description: String!
   buttonText: String!
+  buttonTextBefore: String!
   buttonUrl: String!
   thumbnailUrl: String
   isLive: Boolean!
   viewersCount: String!
+  occursAt: DateTime
+  occursAtTimezone: String
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -171,10 +174,13 @@ input UpsertLiveInput {
   title: String!
   description: String!
   buttonText: String!
+  buttonTextBefore: String!
   buttonUrl: String!
   thumbnailUrl: String
   isLive: Boolean!
   viewersCount: String!
+  occursAt: DateTime
+  occursAtTimezone: String
 }
 
 input CreateEpisodeInput {

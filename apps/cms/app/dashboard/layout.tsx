@@ -1,25 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { graphqlRequest, removeAuthCookie } from "../../lib/graphql-client";
-import { ME } from "../../lib/queries";
-
-type User = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
-  role: {
-    id: string;
-    name: string;
-    label: string;
-    isAdmin: boolean;
-  };
-};
+import { useQuery } from "@repo/graphql/react";
+import { ME, clearAuthToken } from "@repo/graphql";
+import type { User } from "@repo/types";
 
 const menuItems = [
   { label: "Dashboard", href: "/dashboard", icon: "📊", exact: true },
@@ -36,25 +22,15 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, error, loading } = useQuery<{ me: User }>(ME);
+  const user = data?.me ?? null;
 
   useEffect(() => {
-    async function fetchUser() {
-      try {
-        const data = await graphqlRequest<{ me: User }>(ME);
-        setUser(data.me);
-      } catch {
-        router.replace("/login");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUser();
-  }, [router]);
+    if (error) router.replace("/login");
+  }, [error, router]);
 
   const handleLogout = () => {
-    removeAuthCookie();
+    clearAuthToken();
     router.replace("/login");
   };
 

@@ -2,41 +2,41 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { graphqlRequest, setAuthCookie } from "../../lib/graphql-client";
-import { LOGIN } from "../../lib/queries";
+import { useMutation } from "@repo/graphql/react";
+import { LOGIN, setAuthToken } from "@repo/graphql";
+import type { AuthPayload } from "@repo/types";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     identifier: "",
     password: "",
   });
+  const [login, { loading }] = useMutation<{ login: AuthPayload }>(LOGIN);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
     try {
-      const data = await graphqlRequest<{
-        login: { token: string; user: { firstName: string } };
-      }>(LOGIN, {
-        input: {
-          identifier: form.identifier,
-          password: form.password,
+      const { data } = await login({
+        variables: {
+          input: {
+            identifier: form.identifier,
+            password: form.password,
+          },
         },
       });
 
-      setAuthCookie(data.login.token);
-      router.push("/dashboard");
+      if (data?.login) {
+        setAuthToken(data.login.token);
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Credenciais inválidas",
       );
-    } finally {
-      setLoading(false);
     }
   };
 

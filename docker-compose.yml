@@ -50,12 +50,14 @@ services:
       target: cms
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+        - NEXT_PUBLIC_GRAPHQL_PATH=${NEXT_PUBLIC_GRAPHQL_PATH:?NEXT_PUBLIC_GRAPHQL_PATH is required}
     ports:
       - "4051:4051"
     environment:
       - NODE_ENV=production
       - PORT=4051
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+      - NEXT_PUBLIC_GRAPHQL_PATH=${NEXT_PUBLIC_GRAPHQL_PATH:?NEXT_PUBLIC_GRAPHQL_PATH is required}
     depends_on:
       backend:
         condition: service_healthy
@@ -67,11 +69,16 @@ services:
       context: .
       dockerfile: Dockerfile
       target: landing
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+        - NEXT_PUBLIC_GRAPHQL_PATH=${NEXT_PUBLIC_GRAPHQL_PATH:?NEXT_PUBLIC_GRAPHQL_PATH is required}
     ports:
       - "4052:4052"
     environment:
       - NODE_ENV=production
       - PORT=4052
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+      - NEXT_PUBLIC_GRAPHQL_PATH=${NEXT_PUBLIC_GRAPHQL_PATH:?NEXT_PUBLIC_GRAPHQL_PATH is required}
     restart: unless-stopped
 
 volumes:
