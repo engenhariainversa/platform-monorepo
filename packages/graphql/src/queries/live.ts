@@ -8,10 +8,13 @@ export const GET_LIVE = gql`
       title
       description
       buttonText
+      buttonTextBefore
       buttonUrl
       thumbnailUrl
       isLive
       viewersCount
+      occursAt
+      occursAtTimezone
     }
   }
 `;
@@ -24,10 +27,13 @@ export const UPSERT_LIVE = gql`
       title
       description
       buttonText
+      buttonTextBefore
       buttonUrl
       thumbnailUrl
       isLive
       viewersCount
+      occursAt
+      occursAtTimezone
     }
   }
 `;
