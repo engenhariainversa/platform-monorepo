@@ -238,6 +238,10 @@ pnpm --filter @repo/database db:seed
 | `DATABASE_URL` | Connection string PostgreSQL | `postgresql://user:pass@host:5432/db` |
 | `NODE_ENV` | Ambiente de execução | `development` / `production` |
 | `PORT` | Porta do serviço | `4050` |
+| `NEXT_PUBLIC_API_URL` | Host público da API (**sem** path), usado por CMS e landing. Concatenado com `NEXT_PUBLIC_GRAPHQL_PATH` para formar o endpoint GraphQL e para servir uploads | `http://localhost:4050` |
+| `NEXT_PUBLIC_GRAPHQL_PATH` | Path do endpoint GraphQL, anexado a `NEXT_PUBLIC_API_URL` | `/graphql` |
+
+> As variáveis `NEXT_PUBLIC_*` são **baked** no bundle no momento do build. Em Docker elas são passadas como `build args` (ver `docker-compose.yml`) e, em produção, injetadas pelo GitHub Actions a partir dos secrets do ambiente `production`.
 
 ---
 
