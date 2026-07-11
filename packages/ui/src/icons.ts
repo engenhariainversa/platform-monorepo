@@ -6,4 +6,5 @@ export {
   Eye,
   PlayCircle,
   User,
+  Calendar,
 } from "lucide-react";
