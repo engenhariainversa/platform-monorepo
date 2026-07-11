@@ -20,6 +20,9 @@ export class LiveType {
   buttonText!: string;
 
   @Field()
+  buttonTextBefore!: string;
+
+  @Field()
   buttonUrl!: string;
 
   @Field({ nullable: true })
@@ -30,6 +33,12 @@ export class LiveType {
 
   @Field()
   viewersCount!: string;
+
+  @Field({ nullable: true })
+  occursAt?: Date;
+
+  @Field({ nullable: true })
+  occursAtTimezone?: string;
 
   @Field()
   createdAt!: Date;
@@ -53,6 +62,9 @@ export class UpsertLiveInput {
   buttonText!: string;
 
   @Field()
+  buttonTextBefore!: string;
+
+  @Field()
   buttonUrl!: string;
 
   @Field({ nullable: true })
@@ -63,6 +75,12 @@ export class UpsertLiveInput {
 
   @Field()
   viewersCount!: string;
+
+  @Field({ nullable: true })
+  occursAt?: Date;
+
+  @Field({ nullable: true })
+  occursAtTimezone?: string;
 }
 
 // ── Episode ──────────────────────────────────────────
