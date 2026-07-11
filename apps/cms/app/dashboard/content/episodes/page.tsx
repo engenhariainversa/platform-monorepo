@@ -2,66 +2,58 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import {
-  graphqlRequest,
-  uploadFile,
-  getUploadUrl,
-} from "../../../../lib/graphql-client";
+import { useMutation, useQuery } from "@repo/graphql/react";
 import {
   GET_EPISODES,
   CREATE_EPISODE,
   UPDATE_EPISODE,
   DELETE_EPISODE,
   REORDER_EPISODES,
-} from "../../../../lib/queries";
-
-type Episode = {
-  id: string;
-  module: string;
-  title: string;
-  duration: string;
-  imageUrl: string | null;
-  order: number;
-};
+  uploadFile,
+  getUploadUrl,
+  type Episode,
+} from "@repo/graphql";
 
 export default function EpisodesContentPage() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const fetchEpisodes = async () => {
-    try {
-      const data = await graphqlRequest<{ episodes: Episode[] }>(GET_EPISODES);
-      setEpisodes(data.episodes);
-    } catch (err) {
-      console.error("Failed to fetch episodes", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, loading, refetch } = useQuery<{ episodes: Episode[] }>(
+    GET_EPISODES,
+  );
 
   useEffect(() => {
-    fetchEpisodes();
-  }, []);
+    if (data?.episodes) setEpisodes(data.episodes);
+  }, [data]);
+
+  const [createEpisode] = useMutation<{ createEpisode: Episode }>(
+    CREATE_EPISODE,
+  );
+  const [updateEpisode] = useMutation<{ updateEpisode: Episode }>(
+    UPDATE_EPISODE,
+  );
+  const [deleteEpisode] = useMutation(DELETE_EPISODE);
+  const [reorderEpisodes] = useMutation(REORDER_EPISODES);
 
   const handleCreate = async () => {
     if (episodes.length >= 4) return;
     try {
-      const data = await graphqlRequest<{ createEpisode: Episode }>(
-        CREATE_EPISODE,
-        {
+      const { data: result } = await createEpisode({
+        variables: {
           input: {
             module: "MOD-XX • EP XX",
             title: "Novo Episódio",
             duration: "00:00",
           },
         },
-      );
-      setEpisodes([...episodes, data.createEpisode]);
-      setEditing(data.createEpisode.id);
+      });
+      if (result?.createEpisode) {
+        setEpisodes([...episodes, result.createEpisode]);
+        setEditing(result.createEpisode.id);
+      }
     } catch (err) {
       console.error("Failed to create", err);
     }
@@ -70,13 +62,13 @@ export default function EpisodesContentPage() {
   const handleUpdate = async (id: string, field: string, value: string) => {
     setSaving(id);
     try {
-      const data = await graphqlRequest<{ updateEpisode: Episode }>(
-        UPDATE_EPISODE,
-        { id, input: { [field]: value } },
-      );
-      setEpisodes((prev) =>
-        prev.map((ep) => (ep.id === id ? data.updateEpisode : ep)),
-      );
+      const { data: result } = await updateEpisode({
+        variables: { id, input: { [field]: value } },
+      });
+      if (result?.updateEpisode) {
+        const updated = result.updateEpisode;
+        setEpisodes((prev) => prev.map((ep) => (ep.id === id ? updated : ep)));
+      }
     } catch (err) {
       console.error("Failed to update", err);
     } finally {
@@ -87,7 +79,7 @@ export default function EpisodesContentPage() {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Remover "${name}"?`)) return;
     try {
-      await graphqlRequest(DELETE_EPISODE, { id });
+      await deleteEpisode({ variables: { id } });
       setEpisodes((prev) => prev.filter((ep) => ep.id !== id));
       setEditing(null);
     } catch (err) {
@@ -105,12 +97,12 @@ export default function EpisodesContentPage() {
     ];
     setEpisodes(newOrder);
     try {
-      await graphqlRequest(REORDER_EPISODES, {
-        ids: newOrder.map((ep) => ep.id),
+      await reorderEpisodes({
+        variables: { ids: newOrder.map((ep) => ep.id) },
       });
     } catch (err) {
       console.error("Failed to reorder", err);
-      fetchEpisodes();
+      refetch();
     }
   };
 

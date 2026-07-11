@@ -1,27 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { graphqlRequest } from "../../../../lib/graphql-client";
+import { useState } from "react";
+import { useMutation, useQuery } from "@repo/graphql/react";
 import {
   GET_ROLES,
   CREATE_ROLE,
   UPDATE_ROLE,
   DELETE_ROLE,
-} from "../../../../lib/queries";
-
-type Role = {
-  id: string;
-  name: string;
-  label: string;
-  description: string | null;
-  isSystem: boolean;
-  isAdmin: boolean;
-  userCount: number;
-};
+  type Role,
+} from "@repo/graphql";
 
 export default function RolesPage() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [newRole, setNewRole] = useState({
@@ -30,28 +19,20 @@ export default function RolesPage() {
     description: "",
   });
 
-  const fetchRoles = async () => {
-    try {
-      const data = await graphqlRequest<{ roles: Role[] }>(GET_ROLES);
-      setRoles(data.roles);
-    } catch (err) {
-      console.error("Failed to load roles", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, loading, refetch } = useQuery<{ roles: Role[] }>(GET_ROLES);
+  const roles = data?.roles ?? [];
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
+  const [createRole] = useMutation(CREATE_ROLE);
+  const [updateRole] = useMutation(UPDATE_ROLE);
+  const [deleteRole] = useMutation(DELETE_ROLE);
 
   const handleCreate = async () => {
     if (!newRole.name || !newRole.label) return;
     try {
-      await graphqlRequest(CREATE_ROLE, { input: newRole });
+      await createRole({ variables: { input: newRole } });
       setShowCreate(false);
       setNewRole({ name: "", label: "", description: "" });
-      fetchRoles();
+      await refetch();
     } catch (err) {
       console.error("Create failed", err);
     }
@@ -59,12 +40,14 @@ export default function RolesPage() {
 
   const handleUpdate = async (id: string, label: string, description: string) => {
     try {
-      await graphqlRequest(UPDATE_ROLE, {
-        id,
-        input: { label, description },
+      await updateRole({
+        variables: {
+          id,
+          input: { label, description },
+        },
       });
       setEditing(null);
-      fetchRoles();
+      await refetch();
     } catch (err) {
       console.error("Update failed", err);
     }
@@ -73,8 +56,8 @@ export default function RolesPage() {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Remover role "${name}"?`)) return;
     try {
-      await graphqlRequest(DELETE_ROLE, { id });
-      fetchRoles();
+      await deleteRole({ variables: { id } });
+      await refetch();
     } catch (err) {
       alert((err as Error).message);
     }

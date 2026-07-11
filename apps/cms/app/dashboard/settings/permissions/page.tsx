@@ -1,32 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { graphqlRequest } from "../../../../lib/graphql-client";
+import { useMutation, useQuery } from "@repo/graphql/react";
 import {
   GET_ROLES,
   GET_PERMISSIONS_FOR_ROLE,
   GET_PUBLIC_RESOURCES,
   TOGGLE_PERMISSION,
   TOGGLE_PUBLIC_RESOURCE,
-} from "../../../../lib/queries";
-
-type Role = {
-  id: string;
-  name: string;
-  label: string;
-  isSystem: boolean;
-  isAdmin: boolean;
-};
-
-type ResourcePerms = {
-  resource: string;
-  create: boolean;
-  read: boolean;
-  update: boolean;
-  delete: boolean;
-};
-
-type PublicResource = { id: string; resource: string };
+  type Role,
+  type ResourcePermissions,
+  type PublicResource,
+} from "@repo/graphql";
 
 const RESOURCE_LABELS: Record<string, string> = {
   live: "Live",
@@ -43,53 +28,53 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export default function PermissionsPage() {
-  const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-  const [permissions, setPermissions] = useState<ResourcePerms[]>([]);
+  const [permissions, setPermissions] = useState<ResourcePermissions[]>([]);
   const [publicResources, setPublicResources] = useState<PublicResource[]>([]);
-  const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
 
+  const { data: rolesData, loading: rolesLoading } = useQuery<{ roles: Role[] }>(
+    GET_ROLES,
+  );
+  const { data: publicData, loading: publicLoading } = useQuery<{
+    publicResources: PublicResource[];
+  }>(GET_PUBLIC_RESOURCES);
+
+  const roles = (rolesData?.roles ?? []).filter((r) => !r.isAdmin);
+  const loading = rolesLoading || publicLoading;
+
+  // Seed the public-resources local state (it's mutated optimistically below).
   useEffect(() => {
-    async function load() {
-      try {
-        const [rolesData, publicData] = await Promise.all([
-          graphqlRequest<{ roles: Role[] }>(GET_ROLES),
-          graphqlRequest<{ publicResources: PublicResource[] }>(
-            GET_PUBLIC_RESOURCES,
-          ),
-        ]);
-        setRoles(rolesData.roles.filter((r) => !r.isAdmin));
-        setPublicResources(publicData.publicResources);
-
-        const firstNonAdmin = rolesData.roles.find((r) => !r.isAdmin);
-        if (firstNonAdmin) {
-          setSelectedRoleId(firstNonAdmin.id);
-        }
-      } catch (err) {
-        console.error("Failed to load", err);
-      } finally {
-        setLoading(false);
-      }
+    if (publicData?.publicResources) {
+      setPublicResources(publicData.publicResources);
     }
-    load();
-  }, []);
+  }, [publicData]);
+
+  // Default to the first non-admin role once roles have loaded.
+  useEffect(() => {
+    if (!selectedRoleId && roles.length > 0) {
+      setSelectedRoleId(roles[0].id);
+    }
+  }, [roles, selectedRoleId]);
+
+  // Permissions for the selected role; re-runs when the selection changes.
+  const { data: permsData } = useQuery<{
+    permissionsForRole: ResourcePermissions[];
+  }>(GET_PERMISSIONS_FOR_ROLE, {
+    variables: { roleId: selectedRoleId },
+    skip: !selectedRoleId,
+  });
 
   useEffect(() => {
-    if (!selectedRoleId) return;
-    loadPermissions(selectedRoleId);
-  }, [selectedRoleId]);
-
-  const loadPermissions = async (roleId: string) => {
-    try {
-      const data = await graphqlRequest<{
-        permissionsForRole: ResourcePerms[];
-      }>(GET_PERMISSIONS_FOR_ROLE, { roleId });
-      setPermissions(data.permissionsForRole);
-    } catch (err) {
-      console.error("Failed to load permissions", err);
+    if (permsData?.permissionsForRole) {
+      setPermissions(permsData.permissionsForRole);
     }
-  };
+  }, [permsData]);
+
+  const [togglePermission] = useMutation(TOGGLE_PERMISSION);
+  const [togglePublicResource] = useMutation<{
+    togglePublicResource: boolean;
+  }>(TOGGLE_PUBLIC_RESOURCE);
 
   const handleToggle = async (resource: string, action: string) => {
     if (!selectedRoleId) return;
@@ -97,14 +82,14 @@ export default function PermissionsPage() {
     setToggling(key);
 
     try {
-      await graphqlRequest(TOGGLE_PERMISSION, {
-        input: { roleId: selectedRoleId, resource, action },
+      await togglePermission({
+        variables: { input: { roleId: selectedRoleId, resource, action } },
       });
       // Optimistic update
       setPermissions((prev) =>
         prev.map((p) =>
           p.resource === resource
-            ? { ...p, [action]: !p[action as keyof ResourcePerms] }
+            ? { ...p, [action]: !p[action as keyof ResourcePermissions] }
             : p,
         ),
       );
@@ -118,15 +103,12 @@ export default function PermissionsPage() {
   const handleTogglePublic = async (resource: string) => {
     setToggling(`public:${resource}`);
     try {
-      const isNowPublic = await graphqlRequest<{
-        togglePublicResource: boolean;
-      }>(TOGGLE_PUBLIC_RESOURCE, { input: { resource } });
+      const { data } = await togglePublicResource({
+        variables: { input: { resource } },
+      });
 
-      if (isNowPublic.togglePublicResource) {
-        setPublicResources((prev) => [
-          ...prev,
-          { id: resource, resource },
-        ]);
+      if (data?.togglePublicResource) {
+        setPublicResources((prev) => [...prev, { id: resource, resource }]);
       } else {
         setPublicResources((prev) =>
           prev.filter((p) => p.resource !== resource),

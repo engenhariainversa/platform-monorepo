@@ -2,24 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useMutation, useQuery } from "@repo/graphql/react";
 import {
-  graphqlRequest,
+  GET_LIVE,
+  UPSERT_LIVE,
   uploadFile,
   getUploadUrl,
-} from "../../../../lib/graphql-client";
-import { GET_LIVE, UPSERT_LIVE } from "../../../../lib/queries";
-
-type LiveData = {
-  id?: string;
-  label: string;
-  title: string;
-  description: string;
-  buttonText: string;
-  buttonUrl: string;
-  thumbnailUrl: string;
-  isLive: boolean;
-  viewersCount: string;
-};
+  type LiveData,
+} from "@repo/graphql";
 
 const emptyLive: LiveData = {
   label: "PRÓXIMA ETAPA DO PIPELINE",
@@ -34,43 +24,33 @@ const emptyLive: LiveData = {
 
 export default function LiveContentPage() {
   const [live, setLive] = useState<LiveData>(emptyLive);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const { data, loading } = useQuery<{ live: LiveData | null }>(GET_LIVE);
+
   useEffect(() => {
-    async function fetchLive() {
-      try {
-        const data = await graphqlRequest<{ live: LiveData | null }>(GET_LIVE);
-        if (data.live) {
-          setLive(data.live);
-        }
-      } catch (err) {
-        console.error("Failed to fetch live", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchLive();
-  }, []);
+    if (data?.live) setLive(data.live);
+  }, [data]);
+
+  const [upsertLive, { loading: saving }] = useMutation<{
+    upsertLive: LiveData;
+  }>(UPSERT_LIVE);
 
   const handleSave = async () => {
-    setSaving(true);
     try {
+      // Drop `id` (a read-only field); `__typename` is stripped globally by the
+      // Apollo client's removeTypenameFromVariables link.
       const { id, ...input } = live;
-      const data = await graphqlRequest<{ upsertLive: LiveData }>(
-        UPSERT_LIVE,
-        { input },
-      );
-      setLive(data.upsertLive);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      const { data: result } = await upsertLive({ variables: { input } });
+      if (result?.upsertLive) {
+        setLive(result.upsertLive);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
     } catch (err) {
       console.error("Failed to save", err);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -139,14 +119,12 @@ export default function LiveContentPage() {
               </div>
               <button
                 onClick={() => setLive({ ...live, isLive: !live.isLive })}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  live.isLive ? "bg-error" : "bg-outline-variant"
-                }`}
+                className={`w-12 h-6 rounded-full transition-colors relative ${live.isLive ? "bg-error" : "bg-outline-variant"
+                  }`}
               >
                 <span
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                    live.isLive ? "left-[26px]" : "left-0.5"
-                  }`}
+                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${live.isLive ? "left-[26px]" : "left-0.5"
+                    }`}
                 />
               </button>
             </div>

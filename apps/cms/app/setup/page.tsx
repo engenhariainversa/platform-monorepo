@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { graphqlRequest, setAuthCookie } from "../../lib/graphql-client";
-import { SETUP_ADMIN } from "../../lib/queries";
+import { useMutation } from "@repo/graphql/react";
+import { SETUP_ADMIN, setAuthToken, type AuthPayload } from "@repo/graphql";
 
 const steps = [
   { title: "Bem-vindo", description: "Configure seu primeiro administrador" },
@@ -15,7 +15,6 @@ const steps = [
 export default function SetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
@@ -25,6 +24,9 @@ export default function SetupPage() {
     password: "",
     confirmPassword: "",
   });
+  const [setupAdmin, { loading }] = useMutation<{ setupAdmin: AuthPayload }>(
+    SETUP_ADMIN,
+  );
 
   const handleSubmit = async () => {
     setError("");
@@ -39,26 +41,25 @@ export default function SetupPage() {
       return;
     }
 
-    setLoading(true);
     try {
-      const data = await graphqlRequest<{
-        setupAdmin: { token: string; user: { firstName: string } };
-      }>(SETUP_ADMIN, {
-        input: {
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          username: form.username,
-          password: form.password,
+      const { data } = await setupAdmin({
+        variables: {
+          input: {
+            firstName: form.firstName,
+            lastName: form.lastName,
+            email: form.email,
+            username: form.username,
+            password: form.password,
+          },
         },
       });
 
-      setAuthCookie(data.setupAdmin.token);
-      setStep(2);
+      if (data?.setupAdmin) {
+        setAuthToken(data.setupAdmin.token);
+        setStep(2);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao criar admin");
-    } finally {
-      setLoading(false);
     }
   };
 

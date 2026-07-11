@@ -1,48 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { graphqlRequest, isAuthenticated } from "../lib/graphql-client";
-import { HAS_ADMIN } from "../lib/queries";
+import { useQuery } from "@repo/graphql/react";
+import { HAS_ADMIN, hasAuthToken } from "@repo/graphql";
 
 export default function Home() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { data, error, loading } = useQuery<{ hasAdmin: boolean }>(HAS_ADMIN, {
+    fetchPolicy: "network-only",
+  });
 
   useEffect(() => {
-    async function checkStatus() {
-      try {
-        const data = await graphqlRequest<{ hasAdmin: boolean }>(HAS_ADMIN);
+    if (loading) return;
 
-        if (!data.hasAdmin) {
-          router.replace("/setup");
-          return;
-        }
-
-        if (!isAuthenticated()) {
-          router.replace("/login");
-          return;
-        }
-
-        router.replace("/dashboard");
-      } catch {
-        // If backend is down, show login
-        router.replace("/login");
-      } finally {
-        setLoading(false);
-      }
+    // If backend is down, show login
+    if (error) {
+      router.replace("/login");
+      return;
     }
 
-    checkStatus();
-  }, [router]);
+    if (!data) return;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+    if (!data.hasAdmin) {
+      router.replace("/setup");
+    } else if (!hasAuthToken()) {
+      router.replace("/login");
+    } else {
+      router.replace("/dashboard");
+    }
+  }, [data, error, loading, router]);
 
-  return null;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
 }

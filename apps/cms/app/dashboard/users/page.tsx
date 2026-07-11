@@ -1,30 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { graphqlRequest } from "../../../lib/graphql-client";
+import { useState } from "react";
+import { useMutation, useQuery } from "@repo/graphql/react";
 import {
   GET_USERS,
+  GET_ROLES,
   CREATE_USER,
   UPDATE_USER_ROLE,
   DELETE_USER,
-  GET_ROLES,
-} from "../../../lib/queries";
-
-type Role = {
-  id: string;
-  name: string;
-  label: string;
-};
-
-type User = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
-  role: Role;
-  createdAt: string;
-};
+  type User,
+  type Role,
+} from "@repo/graphql";
 
 const roleColors: Record<string, string> = {
   ADMIN: "bg-primary/20 text-primary",
@@ -33,11 +19,7 @@ const roleColors: Record<string, string> = {
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
@@ -48,30 +30,26 @@ export default function UsersPage() {
     roleName: "AUTHENTICATED",
   });
 
-  const fetchUsers = async () => {
-    try {
-      const [usersData, rolesData] = await Promise.all([
-        graphqlRequest<{ users: User[] }>(GET_USERS),
-        graphqlRequest<{ roles: { id: string; name: string; label: string }[] }>(GET_ROLES),
-      ]);
-      setUsers(usersData.users);
-      setRoles(rolesData.roles);
-    } catch (err) {
-      console.error("Failed to fetch users", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: usersData,
+    loading: usersLoading,
+    refetch: refetchUsers,
+  } = useQuery<{ users: User[] }>(GET_USERS);
+  const { data: rolesData, loading: rolesLoading } = useQuery<{
+    roles: Role[];
+  }>(GET_ROLES);
+  const users = usersData?.users ?? [];
+  const roles = rolesData?.roles ?? [];
+  const loading = usersLoading || rolesLoading;
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const [createUser, { loading: creating }] = useMutation(CREATE_USER);
+  const [updateUserRole] = useMutation(UPDATE_USER_ROLE);
+  const [deleteUser] = useMutation(DELETE_USER);
 
   const handleCreate = async () => {
     setError("");
-    setCreating(true);
     try {
-      await graphqlRequest(CREATE_USER, { input: form });
+      await createUser({ variables: { input: form } });
       setForm({
         firstName: "",
         lastName: "",
@@ -81,18 +59,16 @@ export default function UsersPage() {
         roleName: "AUTHENTICATED",
       });
       setShowForm(false);
-      fetchUsers();
+      await refetchUsers();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao criar usuário");
-    } finally {
-      setCreating(false);
     }
   };
 
   const handleRoleChange = async (id: string, roleName: string) => {
     try {
-      await graphqlRequest(UPDATE_USER_ROLE, { id, roleName });
-      fetchUsers();
+      await updateUserRole({ variables: { id, roleName } });
+      await refetchUsers();
     } catch (err) {
       console.error("Failed to update role", err);
     }
@@ -101,8 +77,8 @@ export default function UsersPage() {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir ${name}?`)) return;
     try {
-      await graphqlRequest(DELETE_USER, { id });
-      fetchUsers();
+      await deleteUser({ variables: { id } });
+      await refetchUsers();
     } catch (err) {
       console.error("Failed to delete user", err);
     }
