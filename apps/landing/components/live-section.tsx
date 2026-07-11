@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, Eye } from "@repo/ui";
+import { LiveCard, formatLiveDate } from "@repo/ui";
 import { getUploadUrl, GET_LIVE } from "@repo/graphql";
 import type { LiveData } from "@repo/types";
 import { useQuery } from "@repo/graphql/react";
@@ -13,10 +13,13 @@ const FALLBACK: LiveData = {
   description:
     "Hoje vamos configurar toda a automação de deploy para App Store e Play Store. Do zero absoluto ao deploy automatizado.",
   buttonText: "Entrar na Live",
+  buttonTextBefore: "Ativar lembrete",
   buttonUrl: "#",
   thumbnailUrl: "",
   isLive: true,
   viewersCount: "1.2k",
+  occursAt: null,
+  occursAtTimezone: null,
 };
 
 export function LiveSection() {
@@ -33,58 +36,34 @@ export function LiveSection() {
     ? getUploadUrl(data.thumbnailUrl)
     : "/images/live-studio.png";
 
+  // Once a start date is scheduled, it drives the "live" state: the badge shows
+  // only after the event's instant has passed. Without a date we fall back to
+  // the manual toggle set in the CMS.
+  const isLiveNow = data.occursAt
+    ? new Date(data.occursAt).getTime() <= Date.now()
+    : data.isLive;
+  const ctaLabel = isLiveNow ? data.buttonText : data.buttonTextBefore;
+
+  // Human-readable event start, rendered in the timezone the admin scheduled it
+  // in. Shown before the event begins, in place of the "AO VIVO" badge.
+  const occursLabel = isLiveNow
+    ? null
+    : formatLiveDate(data.occursAt, data.occursAtTimezone);
+
   return (
     <section id="live" className="px-margin-mobile md:px-margin-desktop pb-xl">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant flex flex-col md:flex-row items-stretch shadow-2xl relative">
-          {/* Video Thumbnail */}
-          <div className="md:w-1/2 aspect-video bg-surface-container relative overflow-hidden group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={thumbnailSrc}
-              alt="Estúdio de streaming para desenvolvimento mobile"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* Play Overlay */}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-              <Play className="w-16 h-16 text-white fill-white" />
-            </div>
-            {/* Live Badge */}
-            {data.isLive && (
-              <div className="absolute top-md left-md bg-error text-on-error-container font-bold text-code-sm px-base py-1 rounded-sm flex items-center gap-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                AO VIVO AGORA
-              </div>
-            )}
-            {/* Viewers Count */}
-            {data.isLive && (
-              <div className="absolute bottom-md left-md bg-black/60 backdrop-blur-md px-base py-xs rounded text-code-sm text-white flex items-center gap-xs">
-                <Eye className="w-4 h-4" />
-                {data.viewersCount} assistindo
-              </div>
-            )}
-          </div>
-
-          {/* Live Info */}
-          <div className="md:w-1/2 p-lg flex flex-col justify-center space-y-md">
-            <div className="space-y-xs">
-              <p className="font-code text-code-sm text-primary">{data.label}</p>
-              <h2 className="font-headline text-headline-lg-mobile md:text-headline-lg text-on-surface">
-                {data.title}
-              </h2>
-            </div>
-            <p className="font-body text-body-md text-on-surface-variant">
-              {data.description}
-            </p>
-            <a
-              id="cta-live"
-              href={data.buttonUrl || "#"}
-              className="w-fit bg-primary-container text-on-primary font-bold uppercase py-md px-xl rounded-lg glow-primary transition-all flex items-center gap-sm"
-            >
-              {data.buttonText}
-            </a>
-          </div>
-        </div>
+        <LiveCard
+          label={data.label}
+          title={data.title}
+          description={data.description}
+          ctaLabel={ctaLabel}
+          buttonUrl={data.buttonUrl}
+          thumbnailSrc={thumbnailSrc}
+          isLiveNow={isLiveNow}
+          occursLabel={occursLabel}
+          viewersCount={data.viewersCount}
+        />
       </div>
     </section>
   );
@@ -105,7 +84,7 @@ function LiveSectionSkeleton() {
           <div className="md:w-1/2 aspect-video bg-surface-container-highest" />
 
           {/* Info placeholder */}
-          <div className="md:w-1/2 p-lg flex flex-col justify-center space-y-md">
+          <div className="md:w-1/2 p-md md:p-lg flex flex-col justify-center gap-sm md:gap-md">
             <div className="space-y-xs">
               <div className="h-3 w-2/5 rounded bg-surface-container-highest" />
               <div className="h-7 w-11/12 rounded bg-surface-container-highest" />
@@ -115,7 +94,7 @@ function LiveSectionSkeleton() {
               <div className="h-4 w-full rounded bg-surface-container-highest" />
               <div className="h-4 w-5/6 rounded bg-surface-container-highest" />
             </div>
-            <div className="h-12 w-48 rounded-lg bg-surface-container-highest" />
+            <div className="h-12 w-full md:w-48 rounded-lg bg-surface-container-highest" />
           </div>
         </div>
       </div>
