@@ -81,10 +81,18 @@ model Live {
   title        String
   description  String
   buttonText   String   @default("Entrar na Live") @map("button_text")
+  // CTA label shown before the event starts (after start, `buttonText` is used).
+  buttonTextBefore String @default("Ativar lembrete") @map("button_text_before")
   buttonUrl    String   @default("#") @map("button_url")
   thumbnailUrl String?  @map("thumbnail_url")
   isLive       Boolean  @default(false) @map("is_live")
   viewersCount String   @default("0") @map("viewers_count")
+  // Absolute UTC instant the live event starts. The landing derives its "live"
+  // status from this: the badge shows once `occursAt` is in the past.
+  occursAt     DateTime? @map("occurs_at")
+  // IANA timezone (e.g. "America/Sao_Paulo") the admin picked the date/time in.
+  // Kept only so the CMS can re-render the local wall-clock time when editing.
+  occursAtTimezone String? @map("occurs_at_timezone")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
