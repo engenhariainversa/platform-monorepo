@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@repo/graphql/react";
-import { ME, clearAuthToken, type User } from "@repo/graphql";
+import { ME, clearAuthToken } from "@repo/graphql";
+import type { User } from "@repo/types";
 
 const menuItems = [
   { label: "Dashboard", href: "/dashboard", icon: "📊", exact: true },

@@ -1,7 +1,8 @@
 "use client";
 
 import { Play, Eye } from "@repo/ui";
-import { getUploadUrl, GET_LIVE, type LiveData } from "@repo/graphql";
+import { getUploadUrl, GET_LIVE } from "@repo/graphql";
+import type { LiveData } from "@repo/types";
 import { useQuery } from "@repo/graphql/react";
 
 // Fallback content shown while loading or if the CMS is unreachable.

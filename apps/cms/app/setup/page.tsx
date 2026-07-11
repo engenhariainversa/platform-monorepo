@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@repo/graphql/react";
-import { SETUP_ADMIN, setAuthToken, type AuthPayload } from "@repo/graphql";
+import { SETUP_ADMIN, setAuthToken } from "@repo/graphql";
+import type { AuthPayload } from "@repo/types";
 
 const steps = [
   { title: "Bem-vindo", description: "Configure seu primeiro administrador" },

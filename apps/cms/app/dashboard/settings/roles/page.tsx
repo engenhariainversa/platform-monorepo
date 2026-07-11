@@ -2,13 +2,8 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "@repo/graphql/react";
-import {
-  GET_ROLES,
-  CREATE_ROLE,
-  UPDATE_ROLE,
-  DELETE_ROLE,
-  type Role,
-} from "@repo/graphql";
+import { GET_ROLES, CREATE_ROLE, UPDATE_ROLE, DELETE_ROLE } from "@repo/graphql";
+import type { Role } from "@repo/types";
 
 export default function RolesPage() {
   const [showCreate, setShowCreate] = useState(false);

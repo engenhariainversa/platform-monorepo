@@ -108,6 +108,9 @@ importers:
       '@repo/graphql':
         specifier: workspace:*
         version: link:../../packages/graphql
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -151,6 +154,9 @@ importers:
       '@repo/graphql':
         specifier: workspace:*
         version: link:../../packages/graphql
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -222,6 +228,9 @@ importers:
       '@apollo/client':
         specifier: ^4.2.6
         version: 4.2.6(graphql-ws@6.0.8(graphql@16.14.2)(ws@8.20.1))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)(subscriptions-transport-ws@0.11.0(graphql@16.14.2))
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
       graphql:
         specifier: ^16.14.2
         version: 16.14.2
@@ -246,6 +255,15 @@ importers:
         version: 5.9.3
 
   packages/tsconfig: {}
+
+  packages/types:
+    devDependencies:
+      '@repo/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
 
   packages/ui:
     dependencies:

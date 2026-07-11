@@ -8,9 +8,8 @@ import {
   CREATE_USER,
   UPDATE_USER_ROLE,
   DELETE_USER,
-  type User,
-  type Role,
 } from "@repo/graphql";
+import type { User, Role } from "@repo/types";
 
 const roleColors: Record<string, string> = {
   ADMIN: "bg-primary/20 text-primary",

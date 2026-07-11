@@ -8,10 +8,8 @@ import {
   GET_PUBLIC_RESOURCES,
   TOGGLE_PERMISSION,
   TOGGLE_PUBLIC_RESOURCE,
-  type Role,
-  type ResourcePermissions,
-  type PublicResource,
 } from "@repo/graphql";
+import type { Role, ResourcePermissions, PublicResource } from "@repo/types";
 
 const RESOURCE_LABELS: Record<string, string> = {
   live: "Live",

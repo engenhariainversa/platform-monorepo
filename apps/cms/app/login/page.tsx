@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@repo/graphql/react";
-import { LOGIN, setAuthToken, type AuthPayload } from "@repo/graphql";
+import { LOGIN, setAuthToken } from "@repo/graphql";
+import type { AuthPayload } from "@repo/types";
 
 export default function LoginPage() {
   const router = useRouter();

@@ -11,8 +11,8 @@ import {
   REORDER_EPISODES,
   uploadFile,
   getUploadUrl,
-  type Episode,
 } from "@repo/graphql";
+import type { Episode } from "@repo/types";
 
 export default function EpisodesContentPage() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);

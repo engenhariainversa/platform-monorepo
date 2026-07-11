@@ -3,13 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@repo/graphql/react";
-import {
-  GET_LIVE,
-  UPSERT_LIVE,
-  uploadFile,
-  getUploadUrl,
-  type LiveData,
-} from "@repo/graphql";
+import { GET_LIVE, UPSERT_LIVE, uploadFile, getUploadUrl } from "@repo/graphql";
+import type { LiveData } from "@repo/types";
 
 const emptyLive: LiveData = {
   label: "PRÓXIMA ETAPA DO PIPELINE",
