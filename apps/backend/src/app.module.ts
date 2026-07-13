@@ -11,6 +11,8 @@ import { UploadModule } from "./upload/upload.module";
 import { RolesModule } from "./roles/roles.module";
 import { PermissionsModule } from "./permissions/permissions.module";
 
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,7 +22,8 @@ import { PermissionsModule } from "./permissions/permissions.module";
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), "src/schema.gql"),
-      playground: true,
+      playground: false,
+      plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
       context: ({ req, res }: { req: Request; res: Response }) => ({
         req,
         res,
