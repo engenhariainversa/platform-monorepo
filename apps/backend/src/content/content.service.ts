@@ -4,6 +4,7 @@ import {
   UpsertLiveInput,
   CreateEpisodeInput,
   UpdateEpisodeInput,
+  UpsertEpisodesButtonInput,
 } from "./content.types";
 
 @Injectable()
@@ -75,5 +76,24 @@ export class ContentService {
     );
     await prisma.$transaction(updates);
     return this.getEpisodes();
+  }
+
+  // ── Episodes button (singleton pattern) ───────────
+
+  async getEpisodesButton() {
+    return prisma.episodesButton.findFirst();
+  }
+
+  async upsertEpisodesButton(input: UpsertEpisodesButtonInput) {
+    const existing = await prisma.episodesButton.findFirst();
+
+    if (existing) {
+      return prisma.episodesButton.update({
+        where: { id: existing.id },
+        data: input,
+      });
+    }
+
+    return prisma.episodesButton.create({ data: input });
   }
 }

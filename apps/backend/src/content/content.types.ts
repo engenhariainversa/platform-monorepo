@@ -147,3 +147,32 @@ export class UpdateEpisodeInput {
   @Field(() => Int, { nullable: true })
   order?: number;
 }
+
+// ── Episodes button (singleton) ──────────────────────
+
+@ObjectType()
+export class EpisodesButtonType {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  text!: string;
+
+  @Field()
+  url!: string;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
+
+@InputType()
+export class UpsertEpisodesButtonInput {
+  @Field()
+  text!: string;
+
+  @Field()
+  url!: string;
+}
