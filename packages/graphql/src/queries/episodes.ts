@@ -53,3 +53,23 @@ export const REORDER_EPISODES = gql`
     }
   }
 `;
+
+export const GET_EPISODES_BUTTON = gql`
+  query GetEpisodesButton {
+    episodesButton {
+      id
+      text
+      url
+    }
+  }
+`;
+
+export const UPSERT_EPISODES_BUTTON = gql`
+  mutation UpsertEpisodesButton($input: UpsertEpisodesButtonInput!) {
+    upsertEpisodesButton(input: $input) {
+      id
+      text
+      url
+    }
+  }
+`;

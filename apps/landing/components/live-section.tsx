@@ -1,37 +1,29 @@
 "use client";
 
 import { LiveCard, formatLiveDate } from "@repo/ui";
-import { getUploadUrl, GET_LIVE } from "@repo/graphql";
-import type { LiveData } from "@repo/types";
+import { getUploadUrl, LANDING_PAGE_CONTENT } from "@repo/graphql";
+import type { LandingPageContent } from "@repo/types";
 import { useQuery } from "@repo/graphql/react";
 
-// Fallback content shown while loading or if the CMS is unreachable.
-const FALLBACK: LiveData = {
-  id: "",
-  label: "PRÓXIMA ETAPA DO PIPELINE",
-  title: "Live #24: Implementando CI/CD com Fastlane e GitHub Actions",
-  description:
-    "Hoje vamos configurar toda a automação de deploy para App Store e Play Store. Do zero absoluto ao deploy automatizado.",
-  buttonText: "Entrar na Live",
-  buttonTextBefore: "Ativar lembrete",
-  buttonUrl: "#",
-  thumbnailUrl: "",
-  isLive: true,
-  viewersCount: "1.2k",
-  occursAt: null,
-  occursAtTimezone: null,
-};
-
 export function LiveSection() {
-  const { data: queryData, loading } = useQuery<{ live: LiveData | null }>(
-    GET_LIVE,
-  );
+  const {
+    data: queryData,
+    loading,
+    error,
+  } = useQuery<LandingPageContent>(LANDING_PAGE_CONTENT);
 
   if (loading) {
     return <LiveSectionSkeleton />;
   }
 
-  const data = queryData?.live ?? FALLBACK;
+  const data = queryData?.live;
+
+  // No invented content: if the CMS is unreachable or has no live configured,
+  // the section is omitted entirely rather than showing placeholder copy.
+  if (error || !data) {
+    return null;
+  }
+
   const thumbnailSrc = data.thumbnailUrl
     ? getUploadUrl(data.thumbnailUrl)
     : "/images/live-studio.png";

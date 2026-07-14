@@ -9,10 +9,12 @@ import {
   UPDATE_EPISODE,
   DELETE_EPISODE,
   REORDER_EPISODES,
+  GET_EPISODES_BUTTON,
+  UPSERT_EPISODES_BUTTON,
   uploadFile,
   getUploadUrl,
 } from "@repo/graphql";
-import type { Episode } from "@repo/types";
+import type { Episode, EpisodesButton } from "@repo/types";
 
 export default function EpisodesContentPage() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -149,190 +151,306 @@ export default function EpisodesContentPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-on-surface-variant text-sm">
-          {episodes.length}/4 episódios
-        </p>
-        <button
-          onClick={handleCreate}
-          disabled={episodes.length >= 4}
-          className="bg-primary text-on-primary font-bold py-2 px-4 rounded-lg text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          + Adicionar Episódio
-        </button>
-      </div>
-
-      {/* Episodes List */}
-      <div className="space-y-4">
-        {episodes.map((ep, index) => (
-          <div
-            key={ep.id}
-            className="bg-surface-container rounded-xl border border-outline-variant overflow-hidden"
+      {/* ── 1. Episodes ─────────────────────────────── */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-outline-variant pb-3">
+          <div>
+            <h2 className="font-headline text-lg font-bold text-on-surface">
+              Episódios
+            </h2>
+            <p className="text-on-surface-variant text-sm">
+              {episodes.length}/4 episódios exibidos na landing
+            </p>
+          </div>
+          <button
+            onClick={handleCreate}
+            disabled={episodes.length >= 4}
+            className="bg-primary text-on-primary font-bold py-2 px-4 rounded-lg text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {/* Header row */}
+            + Adicionar Episódio
+          </button>
+        </div>
+
+        {/* Episodes List */}
+        <div className="space-y-4">
+          {episodes.map((ep, index) => (
             <div
-              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-container-high transition-colors"
-              onClick={() =>
-                setEditing(editing === ep.id ? null : ep.id)
-              }
+              key={ep.id}
+              className="bg-surface-container rounded-xl border border-outline-variant overflow-hidden"
             >
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMove(index, -1);
-                  }}
-                  disabled={index === 0}
-                  className="text-on-surface-variant hover:text-on-surface disabled:opacity-30 text-xs"
-                >
-                  ▲
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMove(index, 1);
-                  }}
-                  disabled={index === episodes.length - 1}
-                  className="text-on-surface-variant hover:text-on-surface disabled:opacity-30 text-xs"
-                >
-                  ▼
-                </button>
+              {/* Header row */}
+              <div
+                className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-container-high transition-colors"
+                onClick={() => setEditing(editing === ep.id ? null : ep.id)}
+              >
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMove(index, -1);
+                    }}
+                    disabled={index === 0}
+                    className="text-on-surface-variant hover:text-on-surface disabled:opacity-30 text-xs"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMove(index, 1);
+                    }}
+                    disabled={index === episodes.length - 1}
+                    className="text-on-surface-variant hover:text-on-surface disabled:opacity-30 text-xs"
+                  >
+                    ▼
+                  </button>
+                </div>
+
+                <div className="w-20 h-12 bg-surface-container-high rounded overflow-hidden flex-shrink-0">
+                  {ep.imageUrl ? (
+                    <img
+                      src={getUploadUrl(ep.imageUrl)}
+                      alt={ep.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-on-surface-variant">
+                      📷
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-code text-secondary">
+                    {ep.module}
+                  </p>
+                  <p className="text-sm font-bold text-on-surface truncate">
+                    {ep.title}
+                  </p>
+                </div>
+
+                <span className="text-xs font-code text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
+                  {ep.duration}
+                </span>
+
+                <span className="text-on-surface-variant text-sm">
+                  {editing === ep.id ? "▼" : "▶"}
+                </span>
               </div>
 
-              <div className="w-20 h-12 bg-surface-container-high rounded overflow-hidden flex-shrink-0">
-                {ep.imageUrl ? (
-                  <img
-                    src={getUploadUrl(ep.imageUrl)}
-                    alt={ep.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-on-surface-variant">
-                    📷
+              {/* Edit Form */}
+              {editing === ep.id && (
+                <div className="border-t border-outline-variant p-5 space-y-4 bg-surface-container-lowest">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-on-surface-variant mb-1 font-label">
+                        Módulo / Episódio
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={ep.module}
+                        onBlur={(e) =>
+                          handleUpdate(ep.id, "module", e.target.value)
+                        }
+                        className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-on-surface-variant mb-1 font-label">
+                        Duração
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={ep.duration}
+                        onBlur={(e) =>
+                          handleUpdate(ep.id, "duration", e.target.value)
+                        }
+                        className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-code text-secondary">{ep.module}</p>
-                <p className="text-sm font-bold text-on-surface truncate">
-                  {ep.title}
-                </p>
-              </div>
-
-              <span className="text-xs font-code text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
-                {ep.duration}
-              </span>
-
-              <span className="text-on-surface-variant text-sm">
-                {editing === ep.id ? "▼" : "▶"}
-              </span>
-            </div>
-
-            {/* Edit Form */}
-            {editing === ep.id && (
-              <div className="border-t border-outline-variant p-5 space-y-4 bg-surface-container-lowest">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-on-surface-variant mb-1 font-label">
-                      Módulo / Episódio
+                      Título
                     </label>
                     <input
                       type="text"
-                      defaultValue={ep.module}
+                      defaultValue={ep.title}
                       onBlur={(e) =>
-                        handleUpdate(ep.id, "module", e.target.value)
+                        handleUpdate(ep.id, "title", e.target.value)
                       }
-                      className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
+                      className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm text-on-surface-variant mb-1 font-label">
-                      Duração
+                      Imagem
                     </label>
-                    <input
-                      type="text"
-                      defaultValue={ep.duration}
-                      onBlur={(e) =>
-                        handleUpdate(ep.id, "duration", e.target.value)
-                      }
-                      className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
-                    />
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        defaultValue={ep.imageUrl || ""}
+                        onBlur={(e) =>
+                          handleUpdate(ep.id, "imageUrl", e.target.value)
+                        }
+                        className="flex-1 bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
+                        placeholder="/uploads/..."
+                      />
+                      <input
+                        type="file"
+                        ref={(el) => {
+                          fileRefs.current[ep.id] = el;
+                        }}
+                        onChange={(e) => handleUpload(ep.id, e)}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileRefs.current[ep.id]?.click()}
+                        disabled={uploading === ep.id}
+                        className="bg-secondary/15 text-secondary font-bold px-4 py-2 rounded-lg text-sm hover:bg-secondary/25 disabled:opacity-50"
+                      >
+                        {uploading === ep.id ? "..." : "Upload"}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm text-on-surface-variant mb-1 font-label">
-                    Título
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={ep.title}
-                    onBlur={(e) =>
-                      handleUpdate(ep.id, "title", e.target.value)
-                    }
-                    className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-on-surface-variant mb-1 font-label">
-                    Imagem
-                  </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      defaultValue={ep.imageUrl || ""}
-                      onBlur={(e) =>
-                        handleUpdate(ep.id, "imageUrl", e.target.value)
-                      }
-                      className="flex-1 bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
-                      placeholder="/uploads/..."
-                    />
-                    <input
-                      type="file"
-                      ref={(el) => { fileRefs.current[ep.id] = el; }}
-                      onChange={(e) => handleUpload(ep.id, e)}
-                      accept="image/*"
-                      className="hidden"
-                    />
+                  <div className="flex justify-between items-center pt-2">
+                    {saving === ep.id && (
+                      <span className="text-xs text-primary">Salvando...</span>
+                    )}
+                    <span />
                     <button
-                      onClick={() => fileRefs.current[ep.id]?.click()}
-                      disabled={uploading === ep.id}
-                      className="bg-secondary/15 text-secondary font-bold px-4 py-2 rounded-lg text-sm hover:bg-secondary/25 disabled:opacity-50"
+                      onClick={() => handleDelete(ep.id, ep.title)}
+                      className="text-xs text-error hover:bg-error/10 px-3 py-1.5 rounded-lg transition-colors"
                     >
-                      {uploading === ep.id ? "..." : "Upload"}
+                      Remover episódio
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
+          ))}
 
-                <div className="flex justify-between items-center pt-2">
-                  {saving === ep.id && (
-                    <span className="text-xs text-primary">Salvando...</span>
-                  )}
-                  <span />
-                  <button
-                    onClick={() => handleDelete(ep.id, ep.title)}
-                    className="text-xs text-error hover:bg-error/10 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    Remover episódio
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+          {episodes.length === 0 && (
+            <div className="bg-surface-container rounded-xl border border-outline-variant p-12 text-center">
+              <span className="text-4xl mb-4 block">🎬</span>
+              <p className="text-on-surface-variant">
+                Nenhum episódio adicionado. Clique em &quot;Adicionar
+                Episódio&quot; para começar.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
 
-        {episodes.length === 0 && (
-          <div className="bg-surface-container rounded-xl border border-outline-variant p-12 text-center">
-            <span className="text-4xl mb-4 block">🎬</span>
-            <p className="text-on-surface-variant">
-              Nenhum episódio adicionado. Clique em &quot;Adicionar
-              Episódio&quot; para começar.
-            </p>
-          </div>
-        )}
-      </div>
+      {/* ── 2. Section CTA ──────────────────────────── */}
+      <EpisodesButtonSection />
     </div>
+  );
+}
+
+// Editor for the "Ver todos episódios" CTA rendered under the episodes grid on
+// the landing. Singleton, saved with an explicit button (unlike the episode
+// rows, which save on blur).
+function EpisodesButtonSection() {
+  const [text, setText] = useState("");
+  const [url, setUrl] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const { data, loading } = useQuery<{ episodesButton: EpisodesButton | null }>(
+    GET_EPISODES_BUTTON,
+  );
+
+  useEffect(() => {
+    if (data?.episodesButton) {
+      setText(data.episodesButton.text);
+      setUrl(data.episodesButton.url);
+    }
+  }, [data]);
+
+  const [upsertEpisodesButton, { loading: saving }] = useMutation<{
+    upsertEpisodesButton: EpisodesButton;
+  }>(UPSERT_EPISODES_BUTTON);
+
+  const handleSave = async () => {
+    try {
+      const { data: result } = await upsertEpisodesButton({
+        variables: { input: { text, url } },
+      });
+      if (result?.upsertEpisodesButton) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch (err) {
+      console.error("Failed to save", err);
+    }
+  };
+
+  // The landing hides the CTA entirely until both fields are filled in.
+  const isConfigured = text.trim() !== "" && url.trim() !== "";
+
+  return (
+    <section className="space-y-4">
+      <div className="border-b border-outline-variant pb-3">
+        <h2 className="font-headline text-lg font-bold text-on-surface">
+          Botão &quot;Ver todos episódios&quot;
+        </h2>
+        <p className="text-on-surface-variant text-sm">
+          CTA exibido no topo da seção de episódios na landing.
+        </p>
+      </div>
+
+      <div className="bg-surface-container rounded-xl border border-outline-variant p-5 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-on-surface-variant mb-1 font-label">
+              Texto do botão
+            </label>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              disabled={loading}
+              placeholder="Ver todos episódios"
+              className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-on-surface-variant mb-1 font-label">
+              URL de destino
+            </label>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={loading}
+              placeholder="https://..."
+              className="w-full bg-surface-container-high border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm font-code"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs text-on-surface-variant">
+            {isConfigured
+              ? "O botão será exibido na landing."
+              : "Preencha texto e URL para exibir o botão na landing."}
+          </span>
+          <div className="flex items-center gap-3">
+            {saved && <span className="text-xs text-primary">Salvo!</span>}
+            <button
+              onClick={handleSave}
+              disabled={saving || loading || !isConfigured}
+              className="bg-primary text-on-primary font-bold py-2 px-4 rounded-lg text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
