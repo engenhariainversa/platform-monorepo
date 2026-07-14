@@ -1,38 +1,43 @@
+"use client";
+
 import Image from "next/image";
 import { ArrowRight } from "@repo/ui";
+import { getUploadUrl, LANDING_PAGE_CONTENT } from "@repo/graphql";
+import type { Episode, LandingPageContent } from "@repo/types";
+import { useQuery } from "@repo/graphql/react";
 
-const episodes = [
-  {
-    id: "ep-01",
-    module: "MOD-01 • EP 04",
-    title: "Otimização de Performance e Memoization no Flutter",
-    duration: "45:20",
-    image: "/images/ep-01.png",
-  },
-  {
-    id: "ep-02",
-    module: "MOD-01 • EP 03",
-    title: "State Management com Bloc vs Riverpod: O Duelo Final",
-    duration: "32:15",
-    image: "/images/ep-02.png",
-  },
-  {
-    id: "ep-03",
-    module: "MOD-02 • EP 01",
-    title: "Arquitetura de Micro-frontends em Aplicativos Nativos",
-    duration: "58:00",
-    image: "/images/ep-03.png",
-  },
-  {
-    id: "ep-04",
-    module: "MOD-01 • EP 02",
-    title: "Desvendando o Event Loop e Multithreading no Dart",
-    duration: "24:45",
-    image: "/images/ep-04.png",
-  },
+// Bundled artwork, used until an episode has an uploaded image of its own.
+const PLACEHOLDER_IMAGES = [
+  "/images/ep-01.png",
+  "/images/ep-02.png",
+  "/images/ep-03.png",
+  "/images/ep-04.png",
 ];
 
+function episodeImageSrc(episode: Episode, index: number) {
+  if (episode.imageUrl) {
+    return getUploadUrl(episode.imageUrl);
+  }
+  return PLACEHOLDER_IMAGES[index % PLACEHOLDER_IMAGES.length]!;
+}
+
 export function EpisodesSection() {
+  const { data, loading, error } =
+    useQuery<LandingPageContent>(LANDING_PAGE_CONTENT);
+
+  if (loading) {
+    return <EpisodesSectionSkeleton />;
+  }
+
+  const episodes = data?.episodes ?? [];
+  const button = data?.episodesButton;
+
+  // No invented content: if the CMS is unreachable or has no episodes, the
+  // section is omitted entirely rather than showing placeholder episodes.
+  if (error || episodes.length === 0) {
+    return null;
+  }
+
   return (
     <section
       id="episodios"
@@ -47,18 +52,22 @@ export function EpisodesSection() {
             </h2>
             <div className="h-1 w-32 pipeline-line rounded-full" />
           </div>
-          <button
-            id="btn-all-episodes"
-            className="text-primary font-bold uppercase font-label text-label-md flex items-center gap-xs hover:gap-sm transition-all"
-          >
-            Ver todos episódios
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          {/* CTA is CMS-managed; omitted entirely until an admin configures it. */}
+          {button && (
+            <a
+              id="btn-all-episodes"
+              href={button.url}
+              className="text-primary font-bold uppercase font-label text-label-md flex items-center gap-xs hover:gap-sm transition-all"
+            >
+              {button.text}
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          )}
         </div>
 
         {/* Episode Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          {episodes.map((ep) => (
+          {episodes.map((ep, index) => (
             <div
               key={ep.id}
               className="group bg-surface-container rounded-lg overflow-hidden border border-outline-variant hover:border-primary transition-colors cursor-pointer"
@@ -66,7 +75,7 @@ export function EpisodesSection() {
               {/* Thumbnail */}
               <div className="aspect-video relative">
                 <Image
-                  src={ep.image}
+                  src={episodeImageSrc(ep, index)}
                   alt={ep.title}
                   fill
                   className="object-cover"
@@ -84,6 +93,46 @@ export function EpisodesSection() {
                 <h3 className="font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 text-sm">
                   {ep.title}
                 </h3>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Placeholder shown while the episodes are being fetched. Mirrors the real
+// grid so the section doesn't shift once data arrives.
+function EpisodesSectionSkeleton() {
+  return (
+    <section
+      id="episodios"
+      aria-hidden="true"
+      className="px-margin-mobile md:px-margin-desktop py-xl bg-surface-container-lowest"
+    >
+      <div className="max-w-7xl mx-auto animate-pulse">
+        {/* Header placeholder */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-lg gap-md">
+          <div className="space-y-xs">
+            <div className="h-8 w-72 rounded bg-surface-container-highest" />
+            <div className="h-1 w-32 rounded-full bg-surface-container-highest" />
+          </div>
+          <div className="h-5 w-40 rounded bg-surface-container-highest" />
+        </div>
+
+        {/* Grid placeholder */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+          {["a", "b", "c", "d"].map((key) => (
+            <div
+              key={key}
+              className="bg-surface-container rounded-lg overflow-hidden border border-outline-variant"
+            >
+              <div className="aspect-video bg-surface-container-highest" />
+              <div className="p-md space-y-sm">
+                <div className="h-5 w-28 rounded bg-surface-container-highest" />
+                <div className="h-4 w-full rounded bg-surface-container-highest" />
+                <div className="h-4 w-3/4 rounded bg-surface-container-highest" />
               </div>
             </div>
           ))}
