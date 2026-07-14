@@ -29,6 +29,10 @@ services:
       - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - CORS_ORIGINS=https://cms.engenhariainversa.com.br,https://engenhariainversa.com.br,https://www.engenhariainversa.com.br
+      # Must match the volume mount below. The production image runs from /app,
+      # so without this the server would write uploads to /app/uploads — the
+      # container's writable layer, wiped on every redeploy.
+      - UPLOADS_DIR=/app/apps/backend/uploads
     volumes:
       - uploads:/app/apps/backend/uploads
     depends_on:

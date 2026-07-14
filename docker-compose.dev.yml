@@ -29,6 +29,8 @@ services:
       - PORT=4050
       - DATABASE_URL=postgresql://engenharia:inversa_dev_2024@db:5432/engenhariainversa
       - JWT_SECRET=ei-dev-secret-change-in-production-2024
+      # Must match the volume mount below (see docker-compose.yml).
+      - UPLOADS_DIR=/app/apps/backend/uploads
     volumes:
       - ./apps/backend/src:/app/apps/backend/src
       - ./packages/database:/app/packages/database

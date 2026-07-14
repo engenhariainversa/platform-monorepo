@@ -12,12 +12,19 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname, join } from "path";
-import { existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { Response } from "express";
 import { v4 as uuid } from "uuid";
 import { AuthGuard } from "@nestjs/passport";
 
-const UPLOADS_DIR = join(process.cwd(), "uploads");
+// Absolute path, not one derived from cwd: dev runs the server from the package
+// directory while the production image runs it from the repo root, so a relative
+// path resolves to two different places — and only one of them is the mounted
+// volume. UPLOADS_DIR is set explicitly in both compose files.
+const UPLOADS_DIR = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
+
+// Multer errors on a missing destination, and a fresh volume mounts empty.
+mkdirSync(UPLOADS_DIR, { recursive: true });
 
 @Controller("uploads")
 export class UploadController {
