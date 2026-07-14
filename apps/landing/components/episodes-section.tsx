@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ArrowRight } from "@repo/ui";
 import { getUploadUrl, LANDING_PAGE_CONTENT } from "@repo/graphql";
 import type { Episode, LandingPageContent } from "@repo/types";
@@ -74,11 +73,14 @@ export function EpisodesSection() {
             >
               {/* Thumbnail */}
               <div className="aspect-video relative">
-                <Image
+                {/* Plain <img>, as in LiveCard: uploads are served from the API
+                    host, which next/image would route through its optimizer and
+                    reject as a non-allowlisted remote host. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={episodeImageSrc(ep, index)}
                   alt={ep.title}
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
                 <span className="absolute bottom-xs right-xs bg-black/80 px-xs text-xs rounded font-code text-code-sm text-white">
                   {ep.duration}
