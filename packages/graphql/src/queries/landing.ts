@@ -23,6 +23,7 @@ export const LANDING_PAGE_CONTENT = gql`
       buttonUrl
       thumbnailUrl
       isLive
+      isVisible
       viewersCount
       occursAt
       occursAtTimezone

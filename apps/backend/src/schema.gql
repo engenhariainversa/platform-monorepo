@@ -53,6 +53,7 @@ type LiveType {
   buttonUrl: String!
   thumbnailUrl: String
   isLive: Boolean!
+  isVisible: Boolean!
   viewersCount: String!
   occursAt: DateTime
   occursAtTimezone: String
@@ -214,6 +215,7 @@ input UpsertLiveInput {
   buttonUrl: String!
   thumbnailUrl: String
   isLive: Boolean!
+  isVisible: Boolean!
   viewersCount: String!
   occursAt: DateTime
   occursAtTimezone: String

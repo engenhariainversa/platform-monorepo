@@ -11,6 +11,8 @@ export type LiveData = {
   buttonUrl: string;
   thumbnailUrl: string;
   isLive: boolean;
+  // Whether the live section is rendered on the landing at all.
+  isVisible: boolean;
   viewersCount: string;
   // ISO-8601 UTC instant the live event starts (null until scheduled). The
   // landing shows the "live" badge once this instant is in the past.
