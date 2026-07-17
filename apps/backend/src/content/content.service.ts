@@ -5,6 +5,7 @@ import {
   CreateEpisodeInput,
   UpdateEpisodeInput,
   UpsertEpisodesButtonInput,
+  UpsertAboutSectionInput,
 } from "./content.types";
 
 @Injectable()
@@ -76,6 +77,25 @@ export class ContentService {
     );
     await prisma.$transaction(updates);
     return this.getEpisodes();
+  }
+
+  // ── About section (singleton pattern) ─────────────
+
+  async getAboutSection() {
+    return prisma.aboutSection.findFirst();
+  }
+
+  async upsertAboutSection(input: UpsertAboutSectionInput) {
+    const existing = await prisma.aboutSection.findFirst();
+
+    if (existing) {
+      return prisma.aboutSection.update({
+        where: { id: existing.id },
+        data: input,
+      });
+    }
+
+    return prisma.aboutSection.create({ data: input });
   }
 
   // ── Episodes button (singleton pattern) ───────────

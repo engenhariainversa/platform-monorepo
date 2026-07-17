@@ -148,6 +148,59 @@ export class UpdateEpisodeInput {
   order?: number;
 }
 
+// ── About section (singleton) ────────────────────────
+
+@ObjectType()
+export class AboutSectionType {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  title!: string;
+
+  @Field()
+  body!: string;
+
+  @Field()
+  stat1Value!: string;
+
+  @Field()
+  stat1Label!: string;
+
+  @Field()
+  stat2Value!: string;
+
+  @Field()
+  stat2Label!: string;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
+
+@InputType()
+export class UpsertAboutSectionInput {
+  @Field()
+  title!: string;
+
+  @Field()
+  body!: string;
+
+  @Field()
+  stat1Value!: string;
+
+  @Field()
+  stat1Label!: string;
+
+  @Field()
+  stat2Value!: string;
+
+  @Field()
+  stat2Label!: string;
+}
+
 // ── Episodes button (singleton) ──────────────────────
 
 @ObjectType()

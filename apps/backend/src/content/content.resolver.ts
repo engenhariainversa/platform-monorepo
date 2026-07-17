@@ -5,10 +5,12 @@ import {
   LiveType,
   EpisodeType,
   EpisodesButtonType,
+  AboutSectionType,
   UpsertLiveInput,
   CreateEpisodeInput,
   UpdateEpisodeInput,
   UpsertEpisodesButtonInput,
+  UpsertAboutSectionInput,
 } from "./content.types";
 import { GqlAuthGuard } from "../auth/auth.guard";
 import { RolesGuard } from "../common/roles.guard";
@@ -68,6 +70,20 @@ export class ContentResolver {
   @Resource("episodes", "update")
   async reorderEpisodes(@Args("ids", { type: () => [String] }) ids: string[]) {
     return this.contentService.reorderEpisodes(ids);
+  }
+
+  // ── About section ─────────────────────────────────
+
+  @Query(() => AboutSectionType, { nullable: true })
+  async aboutSection() {
+    return this.contentService.getAboutSection();
+  }
+
+  @Mutation(() => AboutSectionType)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("about", "update")
+  async upsertAboutSection(@Args("input") input: UpsertAboutSectionInput) {
+    return this.contentService.upsertAboutSection(input);
   }
 
   // ── Episodes button ───────────────────────────────
