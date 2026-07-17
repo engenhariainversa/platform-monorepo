@@ -59,6 +59,28 @@ export default function ContentPage() {
             Gerencie os 4 episódios exibidos na seção de episódios recentes.
           </p>
         </Link>
+
+        {/* About Section Card */}
+        <Link
+          href="/dashboard/content/about"
+          className="group bg-surface-container rounded-xl p-6 border border-outline-variant hover:border-primary transition-colors"
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-secondary/15 flex items-center justify-center">
+              <span className="text-2xl">🏫</span>
+            </div>
+            <span className="text-xs font-code text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
+              texto + stats
+            </span>
+          </div>
+          <h2 className="font-headline text-lg font-bold text-on-surface group-hover:text-primary transition-colors">
+            Sobre / A Escola do Futuro
+          </h2>
+          <p className="text-on-surface-variant text-sm mt-1">
+            Edite o título, os parágrafos e os dois indicadores da seção
+            &quot;A Escola do Futuro&quot;.
+          </p>
+        </Link>
       </div>
     </div>
   );
