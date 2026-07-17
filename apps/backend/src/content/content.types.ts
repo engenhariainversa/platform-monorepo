@@ -32,6 +32,9 @@ export class LiveType {
   isLive!: boolean;
 
   @Field()
+  isVisible!: boolean;
+
+  @Field()
   viewersCount!: string;
 
   @Field({ nullable: true })
@@ -72,6 +75,9 @@ export class UpsertLiveInput {
 
   @Field()
   isLive!: boolean;
+
+  @Field()
+  isVisible!: boolean;
 
   @Field()
   viewersCount!: string;
