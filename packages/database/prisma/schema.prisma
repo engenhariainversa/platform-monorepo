@@ -112,6 +112,20 @@ model Episode {
   @@map("episodes")
 }
 
+// Hero section at the top of the landing page. Singleton, like Live: at most
+// one row, edited from the "Hero Section" content CMS page.
+model HeroSection {
+  id         String   @id @default(uuid())
+  title      String   @default("Construindo a maior escola mobile do zero")
+  subtitle   String   @default("Acompanhe os bastidores técnicos reais através da nossa jornada Build in Public no YouTube. Aprenda engenharia de software de verdade, vendo como as coisas são feitas na prática.")
+  buttonText String   @default("Acompanhar no YouTube") @map("button_text")
+  buttonUrl  String   @default("#") @map("button_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("hero_section")
+}
+
 // CTA rendered under the episodes list on the landing ("Ver todos episódios").
 // Singleton, like Live: at most one row, edited from the episodes CMS page.
 model EpisodesButton {
