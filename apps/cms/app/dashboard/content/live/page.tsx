@@ -23,6 +23,7 @@ const emptyLive: LiveData = {
   buttonUrl: "#",
   thumbnailUrl: "",
   isLive: false,
+  isVisible: true,
   viewersCount: "0",
   occursAt: null,
   occursAtTimezone: null,
@@ -182,6 +183,33 @@ export default function LiveContentPage() {
 
       {/* Form (full width) */}
       <div className="space-y-6">
+        {/* Visibility Toggle — controls whether the section renders on the landing */}
+        <div className="bg-surface-container rounded-xl p-6 border border-outline-variant">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-on-surface">
+                Exibir seção na landing
+              </p>
+              <p className="text-xs text-on-surface-variant">
+                Quando desativado, a seção de live não aparece no site (o
+                conteúdo é preservado).
+              </p>
+            </div>
+            <button
+              onClick={() => setLive({ ...live, isVisible: !live.isVisible })}
+              className={`w-12 h-6 rounded-full transition-colors relative ${
+                live.isVisible ? "bg-primary" : "bg-outline-variant"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                  live.isVisible ? "left-[26px]" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
         <div className="bg-surface-container rounded-xl p-6 border border-outline-variant space-y-5">
           <h2 className="font-headline text-lg font-bold text-on-surface">
             Informações da Live
