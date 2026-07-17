@@ -148,6 +148,47 @@ export class UpdateEpisodeInput {
   order?: number;
 }
 
+// ── Hero section (singleton) ─────────────────────────
+
+@ObjectType()
+export class HeroSectionType {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  title!: string;
+
+  @Field()
+  subtitle!: string;
+
+  @Field()
+  buttonText!: string;
+
+  @Field()
+  buttonUrl!: string;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
+
+@InputType()
+export class UpsertHeroSectionInput {
+  @Field()
+  title!: string;
+
+  @Field()
+  subtitle!: string;
+
+  @Field()
+  buttonText!: string;
+
+  @Field()
+  buttonUrl!: string;
+}
+
 // ── About section (singleton) ────────────────────────
 
 @ObjectType()

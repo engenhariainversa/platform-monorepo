@@ -5,6 +5,14 @@ import { gql } from "@apollo/client";
 // and keeps the two sections in sync from the same cache entries.
 export const LANDING_PAGE_CONTENT = gql`
   query LandingPageContent {
+    heroSection {
+      id
+      title
+      subtitle
+      buttonText
+      buttonUrl
+    }
+
     live {
       id
       label

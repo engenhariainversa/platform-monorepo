@@ -5,6 +5,7 @@ import {
   CreateEpisodeInput,
   UpdateEpisodeInput,
   UpsertEpisodesButtonInput,
+  UpsertHeroSectionInput,
   UpsertAboutSectionInput,
 } from "./content.types";
 
@@ -77,6 +78,25 @@ export class ContentService {
     );
     await prisma.$transaction(updates);
     return this.getEpisodes();
+  }
+
+  // ── Hero section (singleton pattern) ──────────────
+
+  async getHeroSection() {
+    return prisma.heroSection.findFirst();
+  }
+
+  async upsertHeroSection(input: UpsertHeroSectionInput) {
+    const existing = await prisma.heroSection.findFirst();
+
+    if (existing) {
+      return prisma.heroSection.update({
+        where: { id: existing.id },
+        data: input,
+      });
+    }
+
+    return prisma.heroSection.create({ data: input });
   }
 
   // ── About section (singleton pattern) ─────────────
