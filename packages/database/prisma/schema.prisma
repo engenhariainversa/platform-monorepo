@@ -112,6 +112,24 @@ model Episode {
   @@map("episodes")
 }
 
+// "A Escola do Futuro" about section on the landing. Singleton, like Live: at
+// most one row, edited from the "About Section" content CMS page. The body is
+// stored as plain text; blank lines separate paragraphs when rendered. The two
+// stat cards are a fixed pair (value + label each).
+model AboutSection {
+  id         String   @id @default(uuid())
+  title      String   @default("A Escola do Futuro")
+  body       String
+  stat1Value String   @default("100+") @map("stat1_value")
+  stat1Label String   @default("Horas de Live") @map("stat1_label")
+  stat2Value String   @default("15k") @map("stat2_value")
+  stat2Label String   @default("Devs Ativos") @map("stat2_label")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("about_section")
+}
+
 // CTA rendered under the episodes list on the landing ("Ver todos episódios").
 // Singleton, like Live: at most one row, edited from the episodes CMS page.
 model EpisodesButton {
