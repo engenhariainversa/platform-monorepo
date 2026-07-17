@@ -86,6 +86,9 @@ model Live {
   buttonUrl    String   @default("#") @map("button_url")
   thumbnailUrl String?  @map("thumbnail_url")
   isLive       Boolean  @default(false) @map("is_live")
+  // Whether the live section is rendered on the landing at all. Lets the admin
+  // hide the whole section without deleting its content.
+  isVisible    Boolean  @default(true) @map("is_visible")
   viewersCount String   @default("0") @map("viewers_count")
   // Absolute UTC instant the live event starts. The landing derives its "live"
   // status from this: the badge shows once `occursAt` is in the past.
