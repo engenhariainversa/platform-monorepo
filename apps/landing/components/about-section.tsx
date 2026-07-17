@@ -1,4 +1,33 @@
+"use client";
+
 import Image from "next/image";
+import { LANDING_PAGE_CONTENT } from "@repo/graphql";
+import type { LandingPageContent } from "@repo/types";
+import { useQuery } from "@repo/graphql/react";
+
+// The about section always renders, so — like the hero — it falls back to this
+// baked-in copy while the CMS content loads or if the API is unreachable. The
+// body is plain text with blank lines between paragraphs.
+const FALLBACK = {
+  title: "A Escola do Futuro",
+  body: [
+    "A Engenharia Inversa não é apenas uma escola de cursos. É uma fábrica de software que opera de portas abertas. Nosso diferencial é a transparência absoluta.",
+    'Enquanto outros ensinam apenas a sintaxe, nós ensinamos o "porquê". Mostramos os erros de arquitetura, as refatorações difíceis e as decisões técnicas que ninguém te conta nos cursos tradicionais.',
+    "Nosso modelo Build in Public garante que você veja o projeto crescendo, evoluindo e sendo testado em produção real.",
+  ].join("\n\n"),
+  stat1Value: "100+",
+  stat1Label: "Horas de Live",
+  stat2Value: "15k",
+  stat2Label: "Devs Ativos",
+};
+
+// Split the plain-text body into paragraphs on blank lines, dropping empties.
+function toParagraphs(body: string) {
+  return body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
 
 const pipelineSteps = [
   {
@@ -22,6 +51,11 @@ const pipelineSteps = [
 ];
 
 export function AboutSection() {
+  const { data, loading } = useQuery<LandingPageContent>(LANDING_PAGE_CONTENT);
+
+  const about = data?.aboutSection ?? FALLBACK;
+  const paragraphs = toParagraphs(about.body);
+
   return (
     <section
       id="sobre"
@@ -29,52 +63,41 @@ export function AboutSection() {
     >
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-xl items-center">
         {/* Text Content */}
-        <div className="space-y-md">
-          <h2 className="font-headline text-headline-lg text-on-surface">
-            A Escola do Futuro
-          </h2>
+        {loading ? (
+          <AboutTextSkeleton />
+        ) : (
+          <div className="space-y-md">
+            <h2 className="font-headline text-headline-lg text-on-surface">
+              {about.title}
+            </h2>
 
-          <div className="space-y-base font-body text-body-md text-on-surface-variant leading-relaxed">
-            <p>
-              A{" "}
-              <strong className="text-primary">Engenharia Inversa</strong> não é
-              apenas uma escola de cursos. É uma fábrica de software que opera
-              de portas abertas. Nosso diferencial é a transparência absoluta.
-            </p>
-            <p>
-              Enquanto outros ensinam apenas a sintaxe, nós ensinamos o
-              &quot;porquê&quot;. Mostramos os erros de arquitetura, as
-              refatorações difíceis e as decisões técnicas que ninguém te conta
-              nos cursos tradicionais.
-            </p>
-            <p>
-              Nosso modelo{" "}
-              <strong className="text-secondary">Build in Public</strong>{" "}
-              garante que você veja o projeto crescendo, evoluindo e sendo
-              testado em produção real.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-md pt-md">
-            <div className="p-md bg-surface-container rounded-lg border-l-4 border-primary">
-              <span className="font-headline text-headline-lg text-primary block">
-                100+
-              </span>
-              <span className="font-code text-code-sm uppercase tracking-wider text-on-surface-variant">
-                Horas de Live
-              </span>
+            <div className="space-y-base font-body text-body-md text-on-surface-variant leading-relaxed">
+              {paragraphs.map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
             </div>
-            <div className="p-md bg-surface-container rounded-lg border-l-4 border-secondary">
-              <span className="font-headline text-headline-lg text-secondary block">
-                15k
-              </span>
-              <span className="font-code text-code-sm uppercase tracking-wider text-on-surface-variant">
-                Devs Ativos
-              </span>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-md pt-md">
+              <div className="p-md bg-surface-container rounded-lg border-l-4 border-primary">
+                <span className="font-headline text-headline-lg text-primary block">
+                  {about.stat1Value}
+                </span>
+                <span className="font-code text-code-sm uppercase tracking-wider text-on-surface-variant">
+                  {about.stat1Label}
+                </span>
+              </div>
+              <div className="p-md bg-surface-container rounded-lg border-l-4 border-secondary">
+                <span className="font-headline text-headline-lg text-secondary block">
+                  {about.stat2Value}
+                </span>
+                <span className="font-code text-code-sm uppercase tracking-wider text-on-surface-variant">
+                  {about.stat2Label}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Pipeline de Aprendizado */}
         <div className="relative bg-surface-container-high p-lg rounded-xl border border-outline-variant overflow-hidden">
@@ -127,5 +150,40 @@ export function AboutSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+// Placeholder for the CMS-managed text column (heading, paragraphs, stats)
+// shown while the content loads. Mirrors the real layout so it doesn't shift.
+// The pipeline column beside it isn't CMS-managed and renders for real.
+function AboutTextSkeleton() {
+  return (
+    <div className="space-y-md w-full animate-pulse" aria-hidden="true">
+      {/* Heading */}
+      <div className="h-9 w-2/3 rounded-lg bg-surface-container-high" />
+
+      {/* Paragraphs */}
+      <div className="space-y-base">
+        {["a", "b", "c"].map((block) => (
+          <div key={block} className="space-y-2">
+            <div className="h-4 w-full rounded bg-surface-container-high" />
+            <div className="h-4 w-full rounded bg-surface-container-high" />
+            <div className="h-4 w-4/5 rounded bg-surface-container-high" />
+          </div>
+        ))}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-md pt-md">
+        <div className="p-md bg-surface-container rounded-lg border-l-4 border-primary space-y-2">
+          <div className="h-8 w-20 rounded bg-surface-container-high" />
+          <div className="h-3 w-28 rounded bg-surface-container-high" />
+        </div>
+        <div className="p-md bg-surface-container rounded-lg border-l-4 border-secondary space-y-2">
+          <div className="h-8 w-20 rounded bg-surface-container-high" />
+          <div className="h-3 w-28 rounded bg-surface-container-high" />
+        </div>
+      </div>
+    </div>
   );
 }

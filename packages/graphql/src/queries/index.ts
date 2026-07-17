@@ -4,5 +4,6 @@ export * from "./roles";
 export * from "./permissions";
 export * from "./episodes";
 export * from "./hero";
+export * from "./about";
 export * from "./live";
 export * from "./landing";

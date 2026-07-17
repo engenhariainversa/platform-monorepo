@@ -42,5 +42,15 @@ export const LANDING_PAGE_CONTENT = gql`
       text
       url
     }
+
+    aboutSection {
+      id
+      title
+      body
+      stat1Value
+      stat1Label
+      stat2Value
+      stat2Label
+    }
   }
 `;

@@ -89,6 +89,18 @@ type EpisodesButtonType {
   updatedAt: DateTime!
 }
 
+type AboutSectionType {
+  id: ID!
+  title: String!
+  body: String!
+  stat1Value: String!
+  stat1Label: String!
+  stat2Value: String!
+  stat2Label: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type PublicResourceType {
   id: ID!
   resource: String!
@@ -117,6 +129,7 @@ type Query {
   episodes: [EpisodeType!]!
   heroSection: HeroSectionType
   episodesButton: EpisodesButtonType
+  aboutSection: AboutSectionType
 }
 
 type Mutation {
@@ -139,6 +152,7 @@ type Mutation {
   reorderEpisodes(ids: [String!]!): [EpisodeType!]!
   upsertHeroSection(input: UpsertHeroSectionInput!): HeroSectionType!
   upsertEpisodesButton(input: UpsertEpisodesButtonInput!): EpisodesButtonType!
+  upsertAboutSection(input: UpsertAboutSectionInput!): AboutSectionType!
 }
 
 input CreateRoleInput {
@@ -231,4 +245,13 @@ input UpsertHeroSectionInput {
 input UpsertEpisodesButtonInput {
   text: String!
   url: String!
+}
+
+input UpsertAboutSectionInput {
+  title: String!
+  body: String!
+  stat1Value: String!
+  stat1Label: String!
+  stat2Value: String!
+  stat2Label: String!
 }

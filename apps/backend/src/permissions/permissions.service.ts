@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@repo/database";
 
-const RESOURCES = ["hero", "live", "episodes", "users", "pages"];
+const RESOURCES = ["hero", "about", "live", "episodes", "users", "pages"];
 const ACTIONS = ["create", "read", "update", "delete"];
 
 @Injectable()

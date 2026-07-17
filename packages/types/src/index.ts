@@ -5,4 +5,5 @@ export * from "./permission";
 export * from "./episode";
 export * from "./episodes-button";
 export * from "./hero-section";
+export * from "./about-section";
 export * from "./landing";
