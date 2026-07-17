@@ -12,6 +12,7 @@ export const GET_LIVE = gql`
       buttonUrl
       thumbnailUrl
       isLive
+      isVisible
       viewersCount
       occursAt
       occursAtTimezone
@@ -31,6 +32,7 @@ export const UPSERT_LIVE = gql`
       buttonUrl
       thumbnailUrl
       isLive
+      isVisible
       viewersCount
       occursAt
       occursAtTimezone
