@@ -20,7 +20,8 @@ export function LiveSection() {
 
   // No invented content: if the CMS is unreachable or has no live configured,
   // the section is omitted entirely rather than showing placeholder copy.
-  if (error || !data) {
+  // The admin can also hide the section explicitly via `isVisible`.
+  if (error || !data || !data.isVisible) {
     return null;
   }
 
