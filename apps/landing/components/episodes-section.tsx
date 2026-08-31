@@ -67,40 +67,64 @@ export function EpisodesSection() {
         {/* Episode Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
           {episodes.map((ep, index) => (
-            <div
-              key={ep.id}
-              className="group bg-surface-container rounded-lg overflow-hidden border border-outline-variant hover:border-primary transition-colors cursor-pointer"
-            >
-              {/* Thumbnail */}
-              <div className="aspect-video relative">
-                {/* Plain <img>, as in LiveCard: uploads are served from the API
-                    host, which next/image would route through its optimizer and
-                    reject as a non-allowlisted remote host. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={episodeImageSrc(ep, index)}
-                  alt={ep.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <span className="absolute bottom-xs right-xs bg-black/80 px-xs text-xs rounded font-code text-code-sm text-white">
-                  {ep.duration}
-                </span>
-              </div>
-
-              {/* Info */}
-              <div className="p-md space-y-sm">
-                <span className="font-code text-code-sm text-secondary bg-secondary/10 px-xs py-0.5 rounded inline-block">
-                  {ep.module}
-                </span>
-                <h3 className="font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 text-sm">
-                  {ep.title}
-                </h3>
-              </div>
-            </div>
+            <EpisodeCard key={ep.id} episode={ep} index={index} />
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+// The card is a link only when an admin has set a video URL for the episode.
+// Without one it renders as a plain container: no pointer cursor and no hover
+// highlight, so the card stops promising a click that goes nowhere.
+function EpisodeCard({ episode, index }: { episode: Episode; index: number }) {
+  const content = (
+    <>
+      {/* Thumbnail */}
+      <div className="aspect-video relative">
+        {/* Plain <img>, as in LiveCard: uploads are served from the API
+            host, which next/image would route through its optimizer and
+            reject as a non-allowlisted remote host. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={episodeImageSrc(episode, index)}
+          alt={episode.title}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <span className="absolute bottom-xs right-xs bg-black/80 px-xs text-xs rounded font-code text-code-sm text-white">
+          {episode.duration}
+        </span>
+      </div>
+
+      {/* Info */}
+      <div className="p-md space-y-sm">
+        <span className="font-code text-code-sm text-secondary bg-secondary/10 px-xs py-0.5 rounded inline-block">
+          {episode.module}
+        </span>
+        <h3 className="font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 text-sm">
+          {episode.title}
+        </h3>
+      </div>
+    </>
+  );
+
+  const baseClassName =
+    "block bg-surface-container rounded-lg overflow-hidden border border-outline-variant transition-colors";
+
+  if (!episode.videoUrl) {
+    return <div className={baseClassName}>{content}</div>;
+  }
+
+  return (
+    <a
+      href={episode.videoUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`group ${baseClassName} hover:border-primary cursor-pointer`}
+    >
+      {content}
+    </a>
   );
 }
 

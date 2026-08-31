@@ -8,6 +8,7 @@ export const GET_EPISODES = gql`
       title
       duration
       imageUrl
+      videoUrl
       order
     }
   }
@@ -21,6 +22,7 @@ export const CREATE_EPISODE = gql`
       title
       duration
       imageUrl
+      videoUrl
       order
     }
   }
@@ -34,6 +36,7 @@ export const UPDATE_EPISODE = gql`
       title
       duration
       imageUrl
+      videoUrl
       order
     }
   }

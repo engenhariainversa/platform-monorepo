@@ -108,6 +108,9 @@ export class EpisodeType {
   @Field({ nullable: true })
   imageUrl?: string;
 
+  @Field({ nullable: true })
+  videoUrl?: string;
+
   @Field(() => Int)
   order!: number;
 
@@ -132,6 +135,9 @@ export class CreateEpisodeInput {
   @Field({ nullable: true })
   imageUrl?: string;
 
+  @Field({ nullable: true })
+  videoUrl?: string;
+
   @Field(() => Int, { nullable: true })
   order?: number;
 }
@@ -149,6 +155,9 @@ export class UpdateEpisodeInput {
 
   @Field({ nullable: true })
   imageUrl?: string;
+
+  @Field({ nullable: true })
+  videoUrl?: string;
 
   @Field(() => Int, { nullable: true })
   order?: number;
