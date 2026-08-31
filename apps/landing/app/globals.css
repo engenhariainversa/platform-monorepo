@@ -9,6 +9,21 @@
     @apply bg-background text-on-surface font-body;
     font-feature-settings: "liga" 1, "calt" 1;
   }
+
+  /* JetBrains Mono ligates `//` and `://`, so a URL in a form field renders
+     with its two slashes fused into a single glyph: the value is intact —
+     copying it out yields both — but it reads as though a slash went missing,
+     and the illusion only sets in once the caret moves away from them.
+
+     A form field shows an exact value the editor has to verify by eye, so
+     ligatures are off there. Both properties are needed: `font-feature-settings`
+     is inherited from body and is applied after `font-variant-ligatures`, so
+     dropping it would re-enable what the line above just turned off. */
+  input,
+  textarea {
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0, "calt" 0;
+  }
 }
 
 @layer utilities {
