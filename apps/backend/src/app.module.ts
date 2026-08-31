@@ -10,6 +10,7 @@ import { ContentModule } from "./content/content.module";
 import { UploadModule } from "./upload/upload.module";
 import { RolesModule } from "./roles/roles.module";
 import { PermissionsModule } from "./permissions/permissions.module";
+import { StatsModule } from "./stats/stats.module";
 
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 
@@ -35,6 +36,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
     AuthModule,
     ContentModule,
     UploadModule,
+    StatsModule,
   ],
   providers: [AppResolver],
 })
