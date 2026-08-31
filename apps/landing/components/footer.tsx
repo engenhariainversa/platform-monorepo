@@ -10,6 +10,10 @@ const navLinks = [
   { label: "Episódios", href: "#episodios" },
   { label: "Mentoria", href: "#mentoria" },
   { label: "Sobre", href: "#sobre" },
+  // Legal links live here rather than under the newsletter widget, which is
+  // hidden by default — they would disappear with it.
+  { label: "Privacidade", href: "#" },
+  { label: "Termos", href: "#" },
 ];
 
 export function Footer() {
@@ -100,44 +104,27 @@ export function Footer() {
         )}
 
         {/* Newsletter — CMS-managed visibility */}
-        <div className="md:col-span-4 space-y-md">
-          {showNewsletter && (
-            <>
-              <h4 className="font-code text-code-sm text-on-surface uppercase font-bold">
-                Assine a News
-              </h4>
-              <div className="flex">
-                <input
-                  id="newsletter-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  className="bg-background border border-outline-variant px-md py-sm rounded-l-lg w-full focus:outline-none focus:ring-2 focus:ring-primary font-code text-code-sm text-on-surface"
-                />
-                <button
-                  id="newsletter-submit"
-                  className="bg-primary text-on-primary px-md py-sm rounded-r-lg font-bold text-sm"
-                >
-                  OK
-                </button>
-              </div>
-            </>
-          )}
-          {/* Legal links are not part of the newsletter widget; they stay put. */}
-          <div className="flex gap-md pt-sm">
-            <a
-              href="#"
-              className="text-on-surface-variant hover:text-primary transition-colors font-label text-xs"
-            >
-              Privacidade
-            </a>
-            <a
-              href="#"
-              className="text-on-surface-variant hover:text-primary transition-colors font-label text-xs"
-            >
-              Termos
-            </a>
+        {showNewsletter && (
+          <div className="md:col-span-4 space-y-md">
+            <h4 className="font-code text-code-sm text-on-surface uppercase font-bold">
+              Assine a News
+            </h4>
+            <div className="flex">
+              <input
+                id="newsletter-email"
+                type="email"
+                placeholder="seu@email.com"
+                className="bg-background border border-outline-variant px-md py-sm rounded-l-lg w-full focus:outline-none focus:ring-2 focus:ring-primary font-code text-code-sm text-on-surface"
+              />
+              <button
+                id="newsletter-submit"
+                className="bg-primary text-on-primary px-md py-sm rounded-r-lg font-bold text-sm"
+              >
+                OK
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Copyright */}
         <div className="md:col-span-12 mt-xl pt-lg border-t border-outline-variant/30 text-center">
