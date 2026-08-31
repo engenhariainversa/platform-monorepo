@@ -27,7 +27,11 @@ export function Footer() {
   // The social block needs both the switch on and at least one link: an empty
   // "Social" heading is worse than no block at all. The switch defaults to on,
   // so the list alone decides while the query is in flight.
-  const socialLinks = data?.socialLinks ?? [];
+  // A link with no URL yet is still being filled in on the CMS side; rendering
+  // it would put a dead entry in the footer.
+  const socialLinks = (data?.socialLinks ?? []).filter(
+    (link) => link.url.trim() !== "",
+  );
   const showSocial =
     (data?.footerSection?.socialLinksEnabled ?? true) && socialLinks.length > 0;
 

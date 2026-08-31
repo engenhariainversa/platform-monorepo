@@ -222,7 +222,11 @@ function SocialLinksSection() {
   const handleCreate = async () => {
     try {
       const { data: result } = await createSocialLink({
-        variables: { input: { label: "Novo link", url: "https://" } },
+        // No half-written "https://" seed: it is not a valid URL, so the row
+        // starts in an error state, and it puts the caret in the middle of
+        // text the editor then has to work around. The placeholder says the
+        // same thing without being a value.
+        variables: { input: { label: "Novo link", url: "" } },
       });
       if (!result?.createSocialLink) return;
     } catch (err) {
@@ -246,7 +250,7 @@ function SocialLinksSection() {
   const handleUrlBlur = async (id: string, rawValue: string) => {
     const value = rawValue.trim();
 
-    if (!isValidLinkUrl(value)) {
+    if (value !== "" && !isValidLinkUrl(value)) {
       setUrlErrors((prev) => ({
         ...prev,
         [id]: "URL inválida. Use um endereço completo, começando com https://",
@@ -368,9 +372,13 @@ function SocialLinksSection() {
                         : "border-outline-variant focus:ring-primary"
                     }`}
                   />
-                  {urlErrors[link.id] && (
+                  {urlErrors[link.id] ? (
                     <p className="text-xs text-error mt-1">
                       {urlErrors[link.id]}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      Enquanto estiver em branco, o link não aparece no rodapé.
                     </p>
                   )}
                 </div>
