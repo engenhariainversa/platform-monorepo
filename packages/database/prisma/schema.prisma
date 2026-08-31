@@ -108,6 +108,9 @@ model Episode {
   title     String
   duration  String
   imageUrl  String?  @map("image_url")
+  // Where the episode card on the landing points to. Generic on purpose: it is
+  // a YouTube link today, but nothing here assumes that.
+  videoUrl  String?  @map("video_url")
   order     Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

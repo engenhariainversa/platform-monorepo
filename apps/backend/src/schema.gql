@@ -67,6 +67,7 @@ type EpisodeType {
   title: String!
   duration: String!
   imageUrl: String
+  videoUrl: String
   order: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -233,6 +234,7 @@ input CreateEpisodeInput {
   title: String!
   duration: String!
   imageUrl: String
+  videoUrl: String
   order: Int
 }
 
@@ -241,6 +243,7 @@ input UpdateEpisodeInput {
   title: String
   duration: String
   imageUrl: String
+  videoUrl: String
   order: Int
 }
 
