@@ -16,11 +16,26 @@ import {
 } from "@repo/graphql";
 import type { Episode, EpisodesButton } from "@repo/types";
 
+// Only absolute http(s) URLs are accepted: the value becomes the href of the
+// episode card on the landing, so a relative path would resolve against the
+// landing itself and a javascript:/data: value would be unsafe.
+function isValidVideoUrl(value: string) {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default function EpisodesContentPage() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [videoUrlErrors, setVideoUrlErrors] = useState<
+    Record<string, string | undefined>
+  >({});
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const { data, loading, refetch } = useQuery<{ episodes: Episode[] }>(
@@ -76,6 +91,23 @@ export default function EpisodesContentPage() {
     } finally {
       setSaving(null);
     }
+  };
+
+  // Validated on blur rather than on every keystroke: a half-typed URL is not
+  // an error yet. An invalid value is kept in the input but never saved.
+  const handleVideoUrlBlur = async (id: string, rawValue: string) => {
+    const value = rawValue.trim();
+
+    if (value !== "" && !isValidVideoUrl(value)) {
+      setVideoUrlErrors((prev) => ({
+        ...prev,
+        [id]: "URL inválida. Use um endereço completo, começando com https://",
+      }));
+      return;
+    }
+
+    setVideoUrlErrors((prev) => ({ ...prev, [id]: undefined }));
+    await handleUpdate(id, "videoUrl", value);
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -315,6 +347,33 @@ export default function EpisodesContentPage() {
                         {uploading === ep.id ? "..." : "Upload"}
                       </button>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-on-surface-variant mb-1 font-label">
+                      URL do vídeo
+                    </label>
+                    <input
+                      type="url"
+                      defaultValue={ep.videoUrl || ""}
+                      onBlur={(e) => handleVideoUrlBlur(ep.id, e.target.value)}
+                      className={`w-full bg-surface-container-high border rounded-lg px-4 py-2.5 text-on-surface focus:ring-2 focus:outline-none text-sm font-code ${
+                        videoUrlErrors[ep.id]
+                          ? "border-error focus:ring-error"
+                          : "border-outline-variant focus:ring-primary"
+                      }`}
+                      placeholder="https://youtube.com/watch?v=..."
+                    />
+                    {videoUrlErrors[ep.id] ? (
+                      <p className="text-xs text-error mt-1">
+                        {videoUrlErrors[ep.id]}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-on-surface-variant mt-1">
+                        Destino do card na landing. Deixe em branco para manter o
+                        card sem link.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex justify-between items-center pt-2">
