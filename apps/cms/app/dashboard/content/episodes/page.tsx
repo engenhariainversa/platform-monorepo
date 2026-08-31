@@ -28,6 +28,14 @@ function isValidVideoUrl(value: string) {
   }
 }
 
+// The Apollo cache stores the `episodes` root field as the list of references
+// it first received, and a reorder mutation only rewrites each episode's
+// `order` — it never moves anything in that list. Re-sorting whatever the cache
+// hands back is what makes a new sequence stick without a refetch.
+function sortByOrder(episodes: Episode[]) {
+  return [...episodes].sort((a, b) => a.order - b.order);
+}
+
 export default function EpisodesContentPage() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -43,7 +51,7 @@ export default function EpisodesContentPage() {
   );
 
   useEffect(() => {
-    if (data?.episodes) setEpisodes(data.episodes);
+    if (data?.episodes) setEpisodes(sortByOrder(data.episodes));
   }, [data]);
 
   const [createEpisode] = useMutation<{ createEpisode: Episode }>(
@@ -124,11 +132,15 @@ export default function EpisodesContentPage() {
   const handleMove = async (index: number, direction: -1 | 1) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= episodes.length) return;
-    const newOrder = [...episodes];
-    [newOrder[index], newOrder[newIndex]] = [
-      newOrder[newIndex],
-      newOrder[index],
-    ];
+    const swapped = [...episodes];
+    [swapped[index], swapped[newIndex]] = [swapped[newIndex], swapped[index]];
+    // Renumber locally as well, matching what the backend is about to persist.
+    // The broadcast that follows the mutation is re-sorted by `order`, so stale
+    // numbers here would snap the list back to the previous sequence.
+    const newOrder = swapped.map((ep, position) => ({
+      ...ep,
+      order: position,
+    }));
     setEpisodes(newOrder);
     try {
       await reorderEpisodes({
