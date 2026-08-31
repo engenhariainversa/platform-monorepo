@@ -103,6 +103,28 @@ export default function ContentPage() {
             &quot;A Escola do Futuro&quot;.
           </p>
         </Link>
+
+        {/* Footer Card */}
+        <Link
+          href="/dashboard/content/footer"
+          className="group bg-surface-container rounded-xl p-6 border border-outline-variant hover:border-primary transition-colors"
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-tertiary/15 flex items-center justify-center">
+              <span className="text-2xl">🔗</span>
+            </div>
+            <span className="text-xs font-code text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
+              rodapé
+            </span>
+          </div>
+          <h2 className="font-headline text-lg font-bold text-on-surface group-hover:text-primary transition-colors">
+            Footer
+          </h2>
+          <p className="text-on-surface-variant text-sm mt-1">
+            Gerencie os links sociais e a exibição dos blocos do rodapé da
+            landing page.
+          </p>
+        </Link>
       </div>
     </div>
   );

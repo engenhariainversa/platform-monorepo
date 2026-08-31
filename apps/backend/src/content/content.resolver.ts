@@ -13,6 +13,11 @@ import {
   UpsertEpisodesButtonInput,
   UpsertHeroSectionInput,
   UpsertAboutSectionInput,
+  FooterSectionType,
+  UpsertFooterSectionInput,
+  SocialLinkType,
+  CreateSocialLinkInput,
+  UpdateSocialLinkInput,
 } from "./content.types";
 import { GqlAuthGuard } from "../auth/auth.guard";
 import { RolesGuard } from "../common/roles.guard";
@@ -114,5 +119,59 @@ export class ContentResolver {
   @Resource("episodes", "update")
   async upsertEpisodesButton(@Args("input") input: UpsertEpisodesButtonInput) {
     return this.contentService.upsertEpisodesButton(input);
+  }
+
+  // ── Footer section ────────────────────────────────
+
+  @Query(() => FooterSectionType, { nullable: true })
+  async footerSection() {
+    return this.contentService.getFooterSection();
+  }
+
+  @Mutation(() => FooterSectionType)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("footer", "update")
+  async upsertFooterSection(@Args("input") input: UpsertFooterSectionInput) {
+    return this.contentService.upsertFooterSection(input);
+  }
+
+  // ── Social links ──────────────────────────────────
+
+  @Query(() => [SocialLinkType])
+  async socialLinks() {
+    return this.contentService.getSocialLinks();
+  }
+
+  @Mutation(() => SocialLinkType)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("footer", "create")
+  async createSocialLink(@Args("input") input: CreateSocialLinkInput) {
+    return this.contentService.createSocialLink(input);
+  }
+
+  @Mutation(() => SocialLinkType)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("footer", "update")
+  async updateSocialLink(
+    @Args("id") id: string,
+    @Args("input") input: UpdateSocialLinkInput,
+  ) {
+    return this.contentService.updateSocialLink(id, input);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("footer", "delete")
+  async deleteSocialLink(@Args("id") id: string) {
+    return this.contentService.deleteSocialLink(id);
+  }
+
+  @Mutation(() => [SocialLinkType])
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("footer", "update")
+  async reorderSocialLinks(
+    @Args("ids", { type: () => [String] }) ids: string[],
+  ) {
+    return this.contentService.reorderSocialLinks(ids);
   }
 }

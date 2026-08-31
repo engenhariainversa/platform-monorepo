@@ -45,6 +45,19 @@ export const LANDING_PAGE_CONTENT = gql`
       url
     }
 
+    footerSection {
+      id
+      newsletterEnabled
+      socialLinksEnabled
+    }
+
+    socialLinks {
+      id
+      label
+      url
+      order
+    }
+
     aboutSection {
       id
       title

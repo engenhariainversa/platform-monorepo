@@ -7,6 +7,9 @@ import {
   UpsertEpisodesButtonInput,
   UpsertHeroSectionInput,
   UpsertAboutSectionInput,
+  UpsertFooterSectionInput,
+  CreateSocialLinkInput,
+  UpdateSocialLinkInput,
 } from "./content.types";
 
 @Injectable()
@@ -116,6 +119,72 @@ export class ContentService {
     }
 
     return prisma.aboutSection.create({ data: input });
+  }
+
+  // ── Footer section (singleton pattern) ────────────
+
+  async getFooterSection() {
+    return prisma.footerSection.findFirst();
+  }
+
+  async upsertFooterSection(input: UpsertFooterSectionInput) {
+    const existing = await prisma.footerSection.findFirst();
+
+    if (existing) {
+      return prisma.footerSection.update({
+        where: { id: existing.id },
+        data: input,
+      });
+    }
+
+    return prisma.footerSection.create({ data: input });
+  }
+
+  // ── Social links ──────────────────────────────────
+
+  async getSocialLinks() {
+    return prisma.socialLink.findMany({
+      orderBy: { order: "asc" },
+    });
+  }
+
+  async createSocialLink(input: CreateSocialLinkInput) {
+    // Last order + 1, not count(): removing a link leaves a gap in the
+    // sequence, and count() would then hand the new link an `order` a
+    // surviving link already holds — two rows tied for the same position.
+    const last = await prisma.socialLink.findFirst({
+      orderBy: { order: "desc" },
+    });
+
+    return prisma.socialLink.create({
+      data: {
+        ...input,
+        order: input.order ?? (last ? last.order + 1 : 0),
+      },
+    });
+  }
+
+  async updateSocialLink(id: string, input: UpdateSocialLinkInput) {
+    return prisma.socialLink.update({
+      where: { id },
+      data: input,
+    });
+  }
+
+  async deleteSocialLink(id: string) {
+    await prisma.socialLink.delete({ where: { id } });
+    return true;
+  }
+
+  async reorderSocialLinks(ids: string[]) {
+    const updates = ids.map((id, index) =>
+      prisma.socialLink.update({
+        where: { id },
+        data: { order: index },
+      }),
+    );
+    await prisma.$transaction(updates);
+    return this.getSocialLinks();
   }
 
   // ── Episodes button (singleton pattern) ───────────

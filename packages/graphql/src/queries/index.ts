@@ -5,6 +5,7 @@ export * from "./permissions";
 export * from "./episodes";
 export * from "./hero";
 export * from "./about";
+export * from "./footer";
 export * from "./live";
 export * from "./landing";
 export * from "./stats";

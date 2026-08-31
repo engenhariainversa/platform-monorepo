@@ -6,5 +6,7 @@ export * from "./episode";
 export * from "./episodes-button";
 export * from "./hero-section";
 export * from "./about-section";
+export * from "./footer-section";
+export * from "./social-link";
 export * from "./landing";
 export * from "./dashboard-stats";
