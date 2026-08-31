@@ -121,8 +121,8 @@ export default function ContentPage() {
             Footer
           </h2>
           <p className="text-on-surface-variant text-sm mt-1">
-            Controle a exibição do widget de newsletter no rodapé da landing
-            page.
+            Gerencie os links sociais e a exibição dos blocos do rodapé da
+            landing page.
           </p>
         </Link>
       </div>
