@@ -95,14 +95,6 @@ type AboutSectionType {
   updatedAt: DateTime!
 }
 
-type EpisodesButtonType {
-  id: ID!
-  text: String!
-  url: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
 type FooterSectionType {
   id: ID!
   newsletterEnabled: Boolean!
@@ -116,6 +108,14 @@ type SocialLinkType {
   label: String!
   url: String!
   order: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EpisodesButtonType {
+  id: ID!
+  text: String!
+  url: String!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
