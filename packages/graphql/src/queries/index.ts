@@ -7,3 +7,4 @@ export * from "./hero";
 export * from "./about";
 export * from "./live";
 export * from "./landing";
+export * from "./stats";

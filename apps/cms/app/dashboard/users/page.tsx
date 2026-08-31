@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@repo/graphql/react";
 import {
   GET_USERS,
@@ -17,8 +18,11 @@ const roleColors: Record<string, string> = {
   AUTHENTICATED: "bg-tertiary/20 text-tertiary",
 };
 
-export default function UsersPage() {
-  const [showForm, setShowForm] = useState(false);
+function UsersPageContent() {
+  const searchParams = useSearchParams();
+  // The dashboard's "Novo Usuário" quick action links here with ?new=1 so the
+  // create form is already open when the user arrives.
+  const [showForm, setShowForm] = useState(searchParams.get("new") === "1");
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
@@ -260,5 +264,14 @@ export default function UsersPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+// useSearchParams needs a suspense boundary to keep the route prerenderable.
+export default function UsersPage() {
+  return (
+    <Suspense fallback={null}>
+      <UsersPageContent />
+    </Suspense>
   );
 }

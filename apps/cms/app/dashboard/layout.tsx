@@ -11,7 +11,6 @@ const menuItems = [
   { label: "Dashboard", href: "/dashboard", icon: "📊", exact: true },
   { label: "Conteúdo", href: "/dashboard/content", icon: "🎬" },
   { label: "Usuários", href: "/dashboard/users", icon: "👥", roles: ["ADMIN", "MANAGER"] },
-  { label: "Páginas", href: "/dashboard/pages", icon: "📄" },
   { label: "Configurações", href: "/dashboard/settings", icon: "⚙️", roles: ["ADMIN"] },
 ];
 

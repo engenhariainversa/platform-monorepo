@@ -7,3 +7,4 @@ export * from "./episodes-button";
 export * from "./hero-section";
 export * from "./about-section";
 export * from "./landing";
+export * from "./dashboard-stats";
