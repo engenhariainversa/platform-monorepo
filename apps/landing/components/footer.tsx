@@ -12,13 +12,6 @@ const navLinks = [
   { label: "Sobre", href: "#sobre" },
 ];
 
-const socialLinks = [
-  { label: "YouTube", href: "#" },
-  { label: "GitHub", href: "#" },
-  { label: "Discord", href: "#" },
-  { label: "Newsletter", href: "#" },
-];
-
 export function Footer() {
   const { data } = useQuery<LandingPageContent>(LANDING_PAGE_CONTENT);
 
@@ -26,6 +19,13 @@ export function Footer() {
   // the query is still in flight: the switch defaults to off, so rendering it
   // optimistically would flash a block that is about to disappear.
   const showNewsletter = data?.footerSection?.newsletterEnabled ?? false;
+
+  // The social block needs both the switch on and at least one link: an empty
+  // "Social" heading is worse than no block at all. The switch defaults to on,
+  // so the list alone decides while the query is in flight.
+  const socialLinks = data?.socialLinks ?? [];
+  const showSocial =
+    (data?.footerSection?.socialLinksEnabled ?? true) && socialLinks.length > 0;
 
   return (
     <footer
@@ -76,24 +76,28 @@ export function Footer() {
           </ul>
         </div>
 
-        {/* Social */}
-        <div className="md:col-span-2 space-y-md">
-          <h4 className="font-code text-code-sm text-on-surface uppercase font-bold">
-            Social
-          </h4>
-          <ul className="space-y-xs text-sm">
-            {socialLinks.map((link) => (
-              <li key={link.label}>
-                <a
-                  href={link.href}
-                  className="text-on-surface-variant hover:text-secondary transition-colors"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Social — CMS-managed */}
+        {showSocial && (
+          <div className="md:col-span-2 space-y-md">
+            <h4 className="font-code text-code-sm text-on-surface uppercase font-bold">
+              Social
+            </h4>
+            <ul className="space-y-xs text-sm">
+              {socialLinks.map((link) => (
+                <li key={link.id}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-on-surface-variant hover:text-secondary transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Newsletter — CMS-managed visibility */}
         <div className="md:col-span-4 space-y-md">
