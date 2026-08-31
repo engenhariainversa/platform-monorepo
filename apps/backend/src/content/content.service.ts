@@ -149,12 +149,17 @@ export class ContentService {
   }
 
   async createSocialLink(input: CreateSocialLinkInput) {
-    const count = await prisma.socialLink.count();
+    // Last order + 1, not count(): removing a link leaves a gap in the
+    // sequence, and count() would then hand the new link an `order` a
+    // surviving link already holds — two rows tied for the same position.
+    const last = await prisma.socialLink.findFirst({
+      orderBy: { order: "desc" },
+    });
 
     return prisma.socialLink.create({
       data: {
         ...input,
-        order: input.order ?? count,
+        order: input.order ?? (last ? last.order + 1 : 0),
       },
     });
   }
