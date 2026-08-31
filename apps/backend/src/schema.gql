@@ -103,6 +103,13 @@ type EpisodesButtonType {
   updatedAt: DateTime!
 }
 
+type FooterSectionType {
+  id: ID!
+  newsletterEnabled: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type PublicResourceType {
   id: ID!
   resource: String!
@@ -138,6 +145,7 @@ type Query {
   heroSection: HeroSectionType
   aboutSection: AboutSectionType
   episodesButton: EpisodesButtonType
+  footerSection: FooterSectionType
   dashboardStats: DashboardStatsType!
 }
 
@@ -162,6 +170,7 @@ type Mutation {
   upsertHeroSection(input: UpsertHeroSectionInput!): HeroSectionType!
   upsertAboutSection(input: UpsertAboutSectionInput!): AboutSectionType!
   upsertEpisodesButton(input: UpsertEpisodesButtonInput!): EpisodesButtonType!
+  upsertFooterSection(input: UpsertFooterSectionInput!): FooterSectionType!
 }
 
 input CreateRoleInput {
@@ -266,4 +275,8 @@ input UpsertAboutSectionInput {
 input UpsertEpisodesButtonInput {
   text: String!
   url: String!
+}
+
+input UpsertFooterSectionInput {
+  newsletterEnabled: Boolean!
 }

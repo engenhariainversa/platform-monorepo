@@ -13,6 +13,8 @@ import {
   UpsertEpisodesButtonInput,
   UpsertHeroSectionInput,
   UpsertAboutSectionInput,
+  FooterSectionType,
+  UpsertFooterSectionInput,
 } from "./content.types";
 import { GqlAuthGuard } from "../auth/auth.guard";
 import { RolesGuard } from "../common/roles.guard";
@@ -114,5 +116,19 @@ export class ContentResolver {
   @Resource("episodes", "update")
   async upsertEpisodesButton(@Args("input") input: UpsertEpisodesButtonInput) {
     return this.contentService.upsertEpisodesButton(input);
+  }
+
+  // ── Footer section ────────────────────────────────
+
+  @Query(() => FooterSectionType, { nullable: true })
+  async footerSection() {
+    return this.contentService.getFooterSection();
+  }
+
+  @Mutation(() => FooterSectionType)
+  @UseGuards(GqlAuthGuard, RolesGuard)
+  @Resource("footer", "update")
+  async upsertFooterSection(@Args("input") input: UpsertFooterSectionInput) {
+    return this.contentService.upsertFooterSection(input);
   }
 }

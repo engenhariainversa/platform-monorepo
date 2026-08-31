@@ -257,6 +257,29 @@ export class UpsertAboutSectionInput {
   stat2Label!: string;
 }
 
+// ── Footer section (singleton) ───────────────────────
+
+@ObjectType()
+export class FooterSectionType {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  newsletterEnabled!: boolean;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
+
+@InputType()
+export class UpsertFooterSectionInput {
+  @Field()
+  newsletterEnabled!: boolean;
+}
+
 // ── Episodes button (singleton) ──────────────────────
 
 @ObjectType()

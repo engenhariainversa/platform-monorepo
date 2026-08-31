@@ -150,6 +150,20 @@ model AboutSection {
   @@map("about_section")
 }
 
+// Footer of the landing page. Singleton, like HeroSection: at most one row,
+// edited from the "Footer" content CMS page. Holds the visibility switches for
+// the footer blocks whose content is not CMS-managed elsewhere.
+model FooterSection {
+  id                String   @id @default(uuid())
+  // The newsletter widget advertises a signup flow that does not exist yet, so
+  // it starts hidden and an admin has to opt into showing it.
+  newsletterEnabled Boolean  @default(false) @map("newsletter_enabled")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("footer_section")
+}
+
 // CTA rendered under the episodes list on the landing ("Ver todos episódios").
 // Singleton, like Live: at most one row, edited from the episodes CMS page.
 model EpisodesButton {

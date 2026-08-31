@@ -7,6 +7,7 @@ import {
   UpsertEpisodesButtonInput,
   UpsertHeroSectionInput,
   UpsertAboutSectionInput,
+  UpsertFooterSectionInput,
 } from "./content.types";
 
 @Injectable()
@@ -116,6 +117,25 @@ export class ContentService {
     }
 
     return prisma.aboutSection.create({ data: input });
+  }
+
+  // ── Footer section (singleton pattern) ────────────
+
+  async getFooterSection() {
+    return prisma.footerSection.findFirst();
+  }
+
+  async upsertFooterSection(input: UpsertFooterSectionInput) {
+    const existing = await prisma.footerSection.findFirst();
+
+    if (existing) {
+      return prisma.footerSection.update({
+        where: { id: existing.id },
+        data: input,
+      });
+    }
+
+    return prisma.footerSection.create({ data: input });
   }
 
   // ── Episodes button (singleton pattern) ───────────
