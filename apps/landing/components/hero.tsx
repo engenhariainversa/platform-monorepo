@@ -26,10 +26,17 @@ export function Hero() {
 
   const hero = data?.heroSection ?? FALLBACK;
 
+  // `isolate` on the section matters: the mascot animates `transform` forever
+  // and carries a drop-shadow filter, so the browser keeps it on its own
+  // compositor layer. The navbar and the mobile menu are the only elements on
+  // the page using backdrop-filter, and a backdrop has to sample whatever is
+  // painted beneath it — an uncontained animating layer gets sampled
+  // inconsistently and flashes above the blur instead of sitting behind it.
+  // Making the hero its own stacking context keeps that layer contained below.
   return (
     <section
       id="hero"
-      className="pt-[140px] pb-lg md:pt-xl md:pb-xl px-margin-mobile md:px-margin-desktop md:min-h-[80vh] flex items-center relative overflow-hidden"
+      className="pt-[140px] pb-lg md:pt-xl md:pb-xl px-margin-mobile md:px-margin-desktop md:min-h-[80vh] flex items-center relative isolate overflow-hidden"
     >
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-lg md:gap-xl items-center relative z-10">
         {/* Mascot — appears FIRST on mobile (above text), SECOND on desktop (right side) */}
@@ -82,7 +89,7 @@ function HeroSkeleton() {
     <section
       id="hero"
       aria-hidden="true"
-      className="pt-[140px] pb-lg md:pt-xl md:pb-xl px-margin-mobile md:px-margin-desktop md:min-h-[80vh] flex items-center relative overflow-hidden"
+      className="pt-[140px] pb-lg md:pt-xl md:pb-xl px-margin-mobile md:px-margin-desktop md:min-h-[80vh] flex items-center relative isolate overflow-hidden"
     >
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-lg md:gap-xl items-center relative z-10">
         {/* Mascot — not CMS-managed, so shown for real even in the skeleton */}
