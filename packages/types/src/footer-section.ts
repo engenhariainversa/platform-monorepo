@@ -4,8 +4,10 @@
 export type FooterSection = {
   id: string;
   newsletterEnabled: boolean;
+  socialLinksEnabled: boolean;
 };
 
 export type UpsertFooterSectionInput = {
   newsletterEnabled: boolean;
+  socialLinksEnabled: boolean;
 };
