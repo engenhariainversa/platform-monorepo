@@ -7,8 +7,9 @@ import { LANDING_PAGE_CONTENT } from "@repo/graphql";
 import type { LandingPageContent } from "@repo/types";
 import { useQuery } from "@repo/graphql/react";
 
+// In page order, so the highlight travels left to right as the reader scrolls.
 const navLinks = [
-  { label: "Cursos", href: "#cursos" },
+  { label: "Live", href: "#live" },
   { label: "Episódios", href: "#episodios" },
   { label: "Sobre", href: "#sobre" },
 ];
@@ -20,6 +21,9 @@ const NAV_HEIGHT = 80;
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // null until the effect has looked at the page; every link is shown until
+  // then, so the bar renders complete on first paint instead of popping in.
+  const [presentIds, setPresentIds] = useState<string[] | null>(null);
 
   // Sections come and go while the landing content loads: EpisodesSection
   // renders a skeleton carrying the same id before swapping in the real one,
@@ -33,6 +37,12 @@ export function Navbar() {
     const sections = navLinks
       .map((link) => document.getElementById(link.href.slice(1)))
       .filter((element): element is HTMLElement => element !== null);
+
+    // Both #live and #episodios can be absent — the admin hides the live
+    // section from the CMS, and the episodes section is omitted when there is
+    // nothing to list. A link to a section that is not on the page is the bug
+    // "Cursos" used to be, so those items are dropped from the bar.
+    setPresentIds(sections.map((section) => section.id));
 
     if (sections.length === 0) return;
 
@@ -68,6 +78,11 @@ export function Navbar() {
 
   const isActive = (href: string) => href.slice(1) === activeId;
 
+  const visibleLinks =
+    presentIds === null
+      ? navLinks
+      : navLinks.filter((link) => presentIds.includes(link.href.slice(1)));
+
   return (
     <nav
       id="main-nav"
@@ -95,7 +110,7 @@ export function Navbar() {
 
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center gap-lg ml-auto">
-          {navLinks.map((link) => (
+          {visibleLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
@@ -138,7 +153,7 @@ export function Navbar() {
         }`}
       >
         <div className="px-margin-mobile py-md border-t border-outline-variant bg-surface-container/95 backdrop-blur-lg space-y-xs">
-          {navLinks.map((link) => (
+          {visibleLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
