@@ -54,13 +54,42 @@ export default function EpisodesContentPage() {
     if (data?.episodes) setEpisodes(sortByOrder(data.episodes));
   }, [data]);
 
+  // Adding and removing an episode has to rewrite the cached `episodes` list,
+  // not just the local one. That cached list is what the query watcher
+  // broadcasts back into this component, and a reorder makes it broadcast: it
+  // rewrites the `order` of every episode. Without these updates the broadcast
+  // replaces local state with a list that never learned about the episode just
+  // added — so it vanishes until a refresh refetches it.
   const [createEpisode] = useMutation<{ createEpisode: Episode }>(
     CREATE_EPISODE,
+    {
+      update(cache, { data: result }) {
+        const created = result?.createEpisode;
+        if (!created) return;
+        cache.updateQuery<{ episodes: Episode[] }>(
+          { query: GET_EPISODES },
+          (prev) =>
+            prev ? { episodes: [...prev.episodes, created] } : undefined,
+        );
+      },
+    },
   );
   const [updateEpisode] = useMutation<{ updateEpisode: Episode }>(
     UPDATE_EPISODE,
   );
-  const [deleteEpisode] = useMutation(DELETE_EPISODE);
+  const [deleteEpisode] = useMutation(DELETE_EPISODE, {
+    update(cache, _result, { variables }) {
+      const removedId = variables?.id;
+      if (!removedId) return;
+      cache.updateQuery<{ episodes: Episode[] }>(
+        { query: GET_EPISODES },
+        (prev) =>
+          prev
+            ? { episodes: prev.episodes.filter((ep) => ep.id !== removedId) }
+            : undefined,
+      );
+    },
+  });
   const [reorderEpisodes] = useMutation(REORDER_EPISODES);
 
   const handleCreate = async () => {
@@ -75,8 +104,9 @@ export default function EpisodesContentPage() {
           },
         },
       });
+      // The list itself arrives through the cache update above; all that is
+      // left here is opening the new row for editing.
       if (result?.createEpisode) {
-        setEpisodes([...episodes, result.createEpisode]);
         setEditing(result.createEpisode.id);
       }
     } catch (err) {
@@ -122,7 +152,6 @@ export default function EpisodesContentPage() {
     if (!confirm(`Remover "${name}"?`)) return;
     try {
       await deleteEpisode({ variables: { id } });
-      setEpisodes((prev) => prev.filter((ep) => ep.id !== id));
       setEditing(null);
     } catch (err) {
       console.error("Failed to delete", err);
