@@ -35,6 +35,7 @@ export const LANDING_PAGE_CONTENT = gql`
       title
       duration
       imageUrl
+      videoUrl
       order
     }
 
