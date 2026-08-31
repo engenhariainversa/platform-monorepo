@@ -1,4 +1,9 @@
+"use client";
+
 import Image from "next/image";
+import { LANDING_PAGE_CONTENT } from "@repo/graphql";
+import type { LandingPageContent } from "@repo/types";
+import { useQuery } from "@repo/graphql/react";
 
 const navLinks = [
   { label: "Cursos", href: "#cursos" },
@@ -15,6 +20,13 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { data } = useQuery<LandingPageContent>(LANDING_PAGE_CONTENT);
+
+  // The newsletter widget stays hidden until an admin turns it on, and while
+  // the query is still in flight: the switch defaults to off, so rendering it
+  // optimistically would flash a block that is about to disappear.
+  const showNewsletter = data?.footerSection?.newsletterEnabled ?? false;
+
   return (
     <footer
       id="footer"
@@ -83,25 +95,30 @@ export function Footer() {
           </ul>
         </div>
 
-        {/* Newsletter */}
+        {/* Newsletter — CMS-managed visibility */}
         <div className="md:col-span-4 space-y-md">
-          <h4 className="font-code text-code-sm text-on-surface uppercase font-bold">
-            Assine a News
-          </h4>
-          <div className="flex">
-            <input
-              id="newsletter-email"
-              type="email"
-              placeholder="seu@email.com"
-              className="bg-background border border-outline-variant px-md py-sm rounded-l-lg w-full focus:outline-none focus:ring-2 focus:ring-primary font-code text-code-sm text-on-surface"
-            />
-            <button
-              id="newsletter-submit"
-              className="bg-primary text-on-primary px-md py-sm rounded-r-lg font-bold text-sm"
-            >
-              OK
-            </button>
-          </div>
+          {showNewsletter && (
+            <>
+              <h4 className="font-code text-code-sm text-on-surface uppercase font-bold">
+                Assine a News
+              </h4>
+              <div className="flex">
+                <input
+                  id="newsletter-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  className="bg-background border border-outline-variant px-md py-sm rounded-l-lg w-full focus:outline-none focus:ring-2 focus:ring-primary font-code text-code-sm text-on-surface"
+                />
+                <button
+                  id="newsletter-submit"
+                  className="bg-primary text-on-primary px-md py-sm rounded-r-lg font-bold text-sm"
+                >
+                  OK
+                </button>
+              </div>
+            </>
+          )}
+          {/* Legal links are not part of the newsletter widget; they stay put. */}
           <div className="flex gap-md pt-sm">
             <a
               href="#"
