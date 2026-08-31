@@ -8,6 +8,8 @@ import {
   UpsertHeroSectionInput,
   UpsertAboutSectionInput,
   UpsertFooterSectionInput,
+  CreateSocialLinkInput,
+  UpdateSocialLinkInput,
 } from "./content.types";
 
 @Injectable()
@@ -136,6 +138,48 @@ export class ContentService {
     }
 
     return prisma.footerSection.create({ data: input });
+  }
+
+  // ── Social links ──────────────────────────────────
+
+  async getSocialLinks() {
+    return prisma.socialLink.findMany({
+      orderBy: { order: "asc" },
+    });
+  }
+
+  async createSocialLink(input: CreateSocialLinkInput) {
+    const count = await prisma.socialLink.count();
+
+    return prisma.socialLink.create({
+      data: {
+        ...input,
+        order: input.order ?? count,
+      },
+    });
+  }
+
+  async updateSocialLink(id: string, input: UpdateSocialLinkInput) {
+    return prisma.socialLink.update({
+      where: { id },
+      data: input,
+    });
+  }
+
+  async deleteSocialLink(id: string) {
+    await prisma.socialLink.delete({ where: { id } });
+    return true;
+  }
+
+  async reorderSocialLinks(ids: string[]) {
+    const updates = ids.map((id, index) =>
+      prisma.socialLink.update({
+        where: { id },
+        data: { order: index },
+      }),
+    );
+    await prisma.$transaction(updates);
+    return this.getSocialLinks();
   }
 
   // ── Episodes button (singleton pattern) ───────────

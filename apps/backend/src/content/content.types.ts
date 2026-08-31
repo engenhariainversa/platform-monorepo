@@ -268,6 +268,9 @@ export class FooterSectionType {
   newsletterEnabled!: boolean;
 
   @Field()
+  socialLinksEnabled!: boolean;
+
+  @Field()
   createdAt!: Date;
 
   @Field()
@@ -278,6 +281,56 @@ export class FooterSectionType {
 export class UpsertFooterSectionInput {
   @Field()
   newsletterEnabled!: boolean;
+
+  @Field()
+  socialLinksEnabled!: boolean;
+}
+
+// ── Social links ─────────────────────────────────────
+
+@ObjectType()
+export class SocialLinkType {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  label!: string;
+
+  @Field()
+  url!: string;
+
+  @Field(() => Int)
+  order!: number;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
+
+@InputType()
+export class CreateSocialLinkInput {
+  @Field()
+  label!: string;
+
+  @Field()
+  url!: string;
+
+  @Field(() => Int, { nullable: true })
+  order?: number;
+}
+
+@InputType()
+export class UpdateSocialLinkInput {
+  @Field({ nullable: true })
+  label?: string;
+
+  @Field({ nullable: true })
+  url?: string;
+
+  @Field(() => Int, { nullable: true })
+  order?: number;
 }
 
 // ── Episodes button (singleton) ──────────────────────
