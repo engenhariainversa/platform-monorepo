@@ -473,7 +473,7 @@ deck.
   `/apresentar/[id]` (player), `/apresentar/[id]/apresentador` (presenter view),
   `/apresentar/[id]/print`.
 - **Landing**: `/apresentacoes/[slug]` and `/apresentacoes/[slug]/print` — server
-  components calling `presentationBySlug` with `cache: "no-store"`; `401` or `null` →
+  components calling `presentationBySlug` (server-side `fetch` to `API_INTERNAL_URL`, §9) with `cache: "no-store"`; `401` or `null` →
   `notFound()`. Metadata `title`/`description` from the presentation. No presenter view
   on the landing in 3a.
 
@@ -503,7 +503,12 @@ graphics" option). `window.print()` fires after `document.fonts.ready` and after
   (or a service restart). Schemas change far less often than renderers, which keep hot
   reload in `@repo/ui`.
 - Next apps: no `transpilePackages` entry for `@repo/slides` (it is compiled).
-- No new secret and no new environment variable.
+- **`API_INTERNAL_URL`** (landing only, server-side): the public deck page fetches on
+  the server, and inside the landing container `NEXT_PUBLIC_API_URL`
+  (`http://localhost:4050` in dev) points at the container itself. Both compose files
+  set `API_INTERNAL_URL=http://backend:4050` on the landing service (compose network
+  name, not a secret); the fetch falls back to `NEXT_PUBLIC_API_URL` when it is unset
+  (host `pnpm dev`). No new secret.
 
 ---
 
