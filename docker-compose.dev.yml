@@ -34,6 +34,7 @@ services:
     volumes:
       - ./apps/backend/src:/app/apps/backend/src
       - ./packages/database:/app/packages/database
+      - ./packages/slides/src:/app/packages/slides/src
       - uploads:/app/apps/backend/uploads
     depends_on:
       db:
@@ -63,6 +64,7 @@ services:
       - ./apps/cms/components:/app/apps/cms/components
       - ./packages/ui/src:/app/packages/ui/src
       - ./packages/graphql/src:/app/packages/graphql/src
+      - ./packages/slides/src:/app/packages/slides/src
     depends_on:
       backend:
         condition: service_healthy
@@ -86,6 +88,7 @@ services:
       - ./apps/landing/public:/app/apps/landing/public
       - ./packages/ui/src:/app/packages/ui/src
       - ./packages/graphql/src:/app/packages/graphql/src
+      - ./packages/slides/src:/app/packages/slides/src
 
 volumes:
   pgdata:
