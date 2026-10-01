@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: sh -c "pnpm --filter @repo/database build && pnpm --filter @repo/database db:migrate:deploy && pnpm --filter @repo/database db:seed && pnpm --filter backend dev"
+    command: sh -c "pnpm --filter @repo/slides build && pnpm --filter @repo/database build && pnpm --filter @repo/database db:migrate:deploy && pnpm --filter @repo/database db:seed && pnpm --filter backend dev"
     ports:
       - "4050:4050"
     environment:
@@ -33,7 +33,8 @@ services:
       - UPLOADS_DIR=/app/apps/backend/uploads
     volumes:
       - ./apps/backend/src:/app/apps/backend/src
-      - ./packages/database:/app/packages/database
+      - ./packages/database/src:/app/packages/database/src
+      - ./packages/database/prisma:/app/packages/database/prisma
       - ./packages/slides/src:/app/packages/slides/src
       - uploads:/app/apps/backend/uploads
     depends_on:
@@ -51,7 +52,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: pnpm --filter cms dev
+    command: sh -c "pnpm --filter @repo/slides build && pnpm --filter cms dev"
     ports:
       - "4051:4051"
     environment:
@@ -74,7 +75,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: pnpm --filter landing dev
+    command: sh -c "pnpm --filter @repo/slides build && pnpm --filter landing dev"
     ports:
       - "4052:4052"
     environment:

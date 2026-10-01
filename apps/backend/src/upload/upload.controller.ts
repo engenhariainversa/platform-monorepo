@@ -13,7 +13,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname, join } from "path";
 import { existsSync, mkdirSync } from "fs";
-import { Response } from "express";
+import type { Response } from "express";
 import { v4 as uuid } from "uuid";
 import { AuthGuard } from "@nestjs/passport";
 
