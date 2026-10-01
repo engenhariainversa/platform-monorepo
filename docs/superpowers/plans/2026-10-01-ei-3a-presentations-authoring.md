@@ -4327,7 +4327,7 @@ Notes for the implementer:
 
 - [ ] **Step 1: Add dependencies and the test runner to `@repo/ui`**
 
-Edit `packages/ui/package.json`: add to `dependencies` `"@repo/slides": "workspace:*"`; add to `devDependencies` `"vitest"` with **the exact same version string** as in `packages/slides/package.json` (Task 1); add the script `"test": "vitest run"`. The file becomes:
+Edit `packages/ui/package.json`: add to `dependencies` `"@repo/slides": "workspace:*"`; add to `devDependencies` `"vitest": "^3.2.0"` (the same range as `packages/slides`, Task 1); add the script `"test": "vitest run"`. The file becomes:
 
 ```json
 {
@@ -4356,12 +4356,10 @@ Edit `packages/ui/package.json`: add to `dependencies` `"@repo/slides": "workspa
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@repo/tsconfig": "workspace:*",
-    "vitest": "<same version string as packages/slides/package.json>"
+    "vitest": "^3.2.0"
   }
 }
 ```
-
-(Replace the `vitest` value with the literal string copied from `packages/slides/package.json`, e.g. `"^3.2.4"` — do not leave the angle-bracket text.)
 
 Create `packages/ui/vitest.config.ts`:
 
@@ -6063,7 +6061,7 @@ EOF
 
 - [ ] **Step 1: Add the CMS test runner and mount `lib/` in dev**
 
-Edit `apps/cms/package.json`: add script `"test": "vitest run"` and devDependency `"vitest"` with the exact version string from `packages/slides/package.json`.
+Edit `apps/cms/package.json`: add script `"test": "vitest run"` and devDependency `"vitest": "^3.2.0"` (the same range as `packages/slides`).
 
 Create `apps/cms/vitest.config.ts`:
 
