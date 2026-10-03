@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { useMutation, useQuery } from "@repo/graphql/react";
+import { useApolloClient, useMutation, useQuery } from "@repo/graphql/react";
 import {
   CREATE_SLIDE,
   DELETE_SLIDE,
@@ -24,21 +24,32 @@ import {
   type SlideTemplateKey,
 } from "@repo/slides";
 import { SlideRenderer } from "@repo/ui";
-import { PresentationHeader, type SaveStatus } from "../../../../components/presentations/presentation-header";
+import { PresentationHeader } from "../../../../components/presentations/presentation-header";
 import { SlideList } from "../../../../components/presentations/slide-list";
 import { TemplateGallery } from "../../../../components/presentations/template-gallery";
 import { SlideForm } from "../../../../components/presentations/slide-form";
 import { inputClass } from "../../../../components/presentations/field-input";
 import { issuesByPath } from "../../../../components/presentations/form-state";
 import { mergeDrafts, moveId, toDraft, type SlideDraft } from "../../../../components/presentations/editor-drafts";
+import {
+  SaveTracker,
+  laterTimestamp,
+  shouldApplySync,
+  shouldShowBanner,
+  type SaveStatus,
+} from "../../../../components/presentations/editor-sync";
 
 const AUTOSAVE_MS = 800;
 
+type PresentationData = { presentation: Presentation | null };
+
 export default function PresentationEditorPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, loading, refetch } = useQuery<{ presentation: Presentation | null }>(GET_PRESENTATION, {
+  const client = useApolloClient();
+  // network-only: the editor never starts from a stale cached copy.
+  const { data, loading } = useQuery<PresentationData>(GET_PRESENTATION, {
     variables: { id },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
   const [updatePresentation] = useMutation(UPDATE_PRESENTATION);
   const [updateSlide] = useMutation(UPDATE_SLIDE);
@@ -46,7 +57,9 @@ export default function PresentationEditorPage() {
   const [deleteSlide] = useMutation(DELETE_SLIDE);
   const [reorderSlides] = useMutation(REORDER_SLIDES);
 
-  const presentation = data?.presentation ?? null;
+  /** The last server state this tab applied (after the first load). */
+  const [server, setServer] = useState<Presentation | null>(null);
+  const presentation = server ?? data?.presentation ?? null;
   const [drafts, setDrafts] = useState<SlideDraft[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<SaveStatus>("saved");
@@ -55,79 +68,168 @@ export default function PresentationEditorPage() {
   const [externalChange, setExternalChange] = useState(false);
 
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-  const pending = useRef(new Set<string>());
+  const tracker = useRef(new SaveTracker());
   const knownUpdatedAt = useRef<string | null>(null);
   const initialised = useRef(false);
+  const structuralError = useRef(false);
+  /** Writes (mutation + its sync) currently running in this tab. */
+  const writesInFlight = useRef(0);
+  /** Incremented whenever a write starts; lets a refetch know a write began after it was requested. */
+  const writeEpoch = useRef(0);
+  const syncSeq = useRef(0);
+  const appliedSync = useRef(0);
+
+  const refreshStatus = useCallback(() => {
+    setStatus(tracker.current.status(writesInFlight.current, structuralError.current));
+  }, []);
 
   // First load: take the server state as-is.
   useEffect(() => {
-    if (!presentation || initialised.current) return;
+    const loaded = data?.presentation;
+    if (!loaded || initialised.current) return;
     initialised.current = true;
-    knownUpdatedAt.current = presentation.updatedAt;
-    const initial = [...presentation.slides].sort((a, b) => a.order - b.order).map(toDraft);
+    knownUpdatedAt.current = loaded.updatedAt;
+    const initial = [...loaded.slides].sort((a, b) => a.order - b.order).map(toDraft);
     setDrafts(initial);
     setSelectedId(initial[0]?.id ?? null);
-  }, [presentation]);
+  }, [data]);
+
+  // Pending autosaves die with the page.
+  useEffect(() => {
+    const pendingTimers = timers.current;
+    return () => {
+      pendingTimers.forEach(clearTimeout);
+      pendingTimers.clear();
+    };
+  }, []);
+
+  /**
+   * Fresh copy straight from the network: no cache (out-of-order responses
+   * cannot overwrite each other there) and no deduplication with an identical
+   * request that left before our write.
+   */
+  const fetchFresh = useCallback(async () => {
+    const { data: result } = await client.query<PresentationData>({
+      query: GET_PRESENTATION,
+      variables: { id },
+      fetchPolicy: "no-cache",
+      context: { queryDeduplication: false },
+    });
+    return result?.presentation ?? null;
+  }, [client, id]);
 
   /** Refetch after one of our own writes and adopt the result as "known". */
   const syncAfterOwnWrite = useCallback(async () => {
-    const result = await refetch();
-    const fresh = result.data?.presentation;
-    if (!fresh) return;
-    knownUpdatedAt.current = fresh.updatedAt;
-    setDrafts((local) => mergeDrafts(fresh.slides, local, pending.current));
-  }, [refetch]);
+    const seq = ++syncSeq.current;
+    const epochAtStart = writeEpoch.current;
+    try {
+      const fresh = await fetchFresh();
+      if (!fresh) return;
+      if (!shouldApplySync({ seq, lastApplied: appliedSync.current, epochAtStart, epochNow: writeEpoch.current })) return;
+      appliedSync.current = seq;
+      knownUpdatedAt.current = laterTimestamp(knownUpdatedAt.current, fresh.updatedAt);
+      setServer(fresh);
+      setDrafts((local) => mergeDrafts(fresh.slides, local, tracker.current.pending));
+    } catch (err) {
+      console.error("Failed to refresh the presentation", err);
+    }
+  }, [fetchFresh]);
+
+  /** Runs one write of this tab followed by its sync, keeping the in-flight bookkeeping. */
+  const runWrite = useCallback(
+    async (action: () => Promise<void>) => {
+      writesInFlight.current++;
+      writeEpoch.current++;
+      refreshStatus();
+      try {
+        await action();
+      } finally {
+        await syncAfterOwnWrite();
+        writesInFlight.current--;
+        refreshStatus();
+      }
+    },
+    [refreshStatus, syncAfterOwnWrite],
+  );
 
   // Writes from outside this tab (the API, another tab) show a banner instead
   // of replacing what is on screen.
   useEffect(() => {
     const onFocus = async () => {
-      const result = await refetch();
-      const fresh = result.data?.presentation;
-      if (fresh && knownUpdatedAt.current && fresh.updatedAt !== knownUpdatedAt.current) setExternalChange(true);
+      const writesInFlightAtStart = writesInFlight.current;
+      const epochAtStart = writeEpoch.current;
+      try {
+        const fresh = await fetchFresh();
+        if (
+          fresh &&
+          shouldShowBanner({
+            fresh: fresh.updatedAt,
+            known: knownUpdatedAt.current,
+            writesInFlightAtStart,
+            writesInFlightNow: writesInFlight.current,
+            epochAtStart,
+            epochNow: writeEpoch.current,
+          })
+        ) {
+          setExternalChange(true);
+        }
+      } catch (err) {
+        console.error("Failed to check the presentation for changes", err);
+      }
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [refetch]);
+  }, [fetchFresh]);
 
-  const reloadFromServer = () => {
-    if (!presentation) return;
-    knownUpdatedAt.current = presentation.updatedAt;
-    pending.current.clear();
+  const reloadFromServer = async () => {
     timers.current.forEach(clearTimeout);
     timers.current.clear();
-    setDrafts([...presentation.slides].sort((a, b) => a.order - b.order).map(toDraft));
-    setExternalChange(false);
+    tracker.current.clear();
+    structuralError.current = false;
+    const seq = ++syncSeq.current;
+    try {
+      const fresh = await fetchFresh();
+      if (!fresh || seq <= appliedSync.current) return;
+      appliedSync.current = seq;
+      knownUpdatedAt.current = laterTimestamp(knownUpdatedAt.current, fresh.updatedAt);
+      setServer(fresh);
+      const next = [...fresh.slides].sort((a, b) => a.order - b.order).map(toDraft);
+      setDrafts(next);
+      setSelectedId((current) => (next.some((d) => d.id === current) ? current : next[0]?.id ?? null));
+      setExternalChange(false);
+    } catch (err) {
+      console.error("Failed to reload the presentation", err);
+      alert(graphQLErrorMessage(err));
+    } finally {
+      refreshStatus();
+    }
   };
 
   const scheduleSave = (draft: SlideDraft) => {
     const existing = timers.current.get(draft.id);
-    if (existing) clearTimeout(existing);
-    const parsed = parseSlideContent(draft.template, draft.content);
-    if (!parsed.ok) {
-      pending.current.add(draft.id);
-      setStatus("invalid");
-      return;
+    if (existing) {
+      clearTimeout(existing);
+      timers.current.delete(draft.id);
     }
-    pending.current.add(draft.id);
-    setStatus("saving");
+    const valid = parseSlideContent(draft.template, draft.content).ok;
+    const seq = tracker.current.edit(draft.id, valid);
+    refreshStatus();
+    if (!valid) return; // invalid content is never sent
     timers.current.set(
       draft.id,
-      setTimeout(async () => {
+      setTimeout(() => {
         timers.current.delete(draft.id);
-        try {
-          await updateSlide({
-            variables: { id: draft.id, input: { template: draft.template, content: draft.content, notes: draft.notes } },
-          });
-          // A newer edit may have been scheduled while this one was in flight:
-          // it stays pending so the sync below does not overwrite it.
-          if (!timers.current.has(draft.id)) pending.current.delete(draft.id);
-          await syncAfterOwnWrite();
-          setStatus(pending.current.size === 0 ? "saved" : "saving");
-        } catch (err) {
-          console.error("Failed to save slide", err);
-          setStatus("error");
-        }
+        void runWrite(async () => {
+          try {
+            await updateSlide({
+              variables: { id: draft.id, input: { template: draft.template, content: draft.content, notes: draft.notes } },
+            });
+            tracker.current.saved(draft.id, seq);
+          } catch (err) {
+            console.error("Failed to save slide", err);
+            tracker.current.failedSave(draft.id, seq);
+          }
+        });
       }, AUTOSAVE_MS),
     );
   };
@@ -140,18 +242,17 @@ export default function PresentationEditorPage() {
     scheduleSave(next);
   };
 
-  const runStructural = async (action: () => Promise<unknown>) => {
-    setStatus("saving");
-    try {
-      await action();
-      await syncAfterOwnWrite();
-      setStatus(pending.current.size === 0 ? "saved" : "saving");
-    } catch (err) {
-      console.error(err);
-      setStatus("error");
-      alert(graphQLErrorMessage(err));
-    }
-  };
+  const runStructural = (action: () => Promise<unknown>) =>
+    runWrite(async () => {
+      try {
+        await action();
+        structuralError.current = false;
+      } catch (err) {
+        console.error(err);
+        structuralError.current = true;
+        alert(graphQLErrorMessage(err));
+      }
+    });
 
   const handleMove = (from: number, to: number) => {
     if (to < 0 || to >= drafts.length || from === to) return;
@@ -198,25 +299,30 @@ export default function PresentationEditorPage() {
   const handleDelete = (index: number) => {
     const slide = drafts[index];
     if (!confirm(`Excluir o slide ${index + 1}?`)) return;
-    pending.current.delete(slide.id);
+    // Drop its unsent autosave: it would hit a slide that no longer exists.
+    const timer = timers.current.get(slide.id);
+    if (timer) clearTimeout(timer);
+    timers.current.delete(slide.id);
+    tracker.current.forget(slide.id);
     const fallback = drafts[index + 1] ?? drafts[index - 1];
     setSelectedId(fallback?.id ?? null);
     void runStructural(() => deleteSlide({ variables: { id: slide.id } }));
   };
 
-  const handleMeta = async (input: { title?: string; slug?: string; visibility?: PresentationVisibility }) => {
+  const handleMeta = (input: { title?: string; slug?: string; visibility?: PresentationVisibility }) => {
     setMetaError("");
-    try {
-      await updatePresentation({ variables: { id, input } });
-      await syncAfterOwnWrite();
-    } catch (err) {
-      const code = graphQLErrorCode(err);
-      setMetaError(
-        code === "SLUG_TAKEN" ? "Este slug já está em uso."
-        : code === "INVALID_SLUG" ? "Slug inválido."
-        : graphQLErrorMessage(err),
-      );
-    }
+    void runWrite(async () => {
+      try {
+        await updatePresentation({ variables: { id, input } });
+      } catch (err) {
+        const code = graphQLErrorCode(err);
+        setMetaError(
+          code === "SLUG_TAKEN" ? "Este slug já está em uso."
+          : code === "INVALID_SLUG" ? "Slug inválido."
+          : graphQLErrorMessage(err),
+        );
+      }
+    });
   };
 
   const selected = drafts.find((d) => d.id === selectedId) ?? null;
@@ -239,7 +345,7 @@ export default function PresentationEditorPage() {
       {externalChange && (
         <div className="flex items-center justify-between rounded-lg border border-secondary bg-secondary/10 px-4 py-2 text-sm text-secondary">
           Esta apresentação foi alterada pela API — recarregar
-          <button onClick={reloadFromServer} className="font-bold underline">Recarregar</button>
+          <button onClick={() => void reloadFromServer()} className="font-bold underline">Recarregar</button>
         </div>
       )}
 

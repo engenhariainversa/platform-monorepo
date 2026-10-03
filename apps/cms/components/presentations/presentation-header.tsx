@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { isValidSlug } from "@repo/slides";
 import type { Presentation, PresentationVisibility } from "@repo/types";
 import { publicPresentationUrl } from "../../lib/landing-url";
 import { inputClass } from "./field-input";
+import type { SaveStatus } from "./editor-sync";
 
-export type SaveStatus = "saved" | "saving" | "error" | "invalid";
+export type { SaveStatus };
 const STATUS_TEXT: Record<SaveStatus, string> = {
   saved: "Salvo",
   saving: "Salvando…",
@@ -25,8 +26,14 @@ export function PresentationHeader({ presentation, status, onSave, metaError }: 
   const [slug, setSlug] = useState(presentation.slug);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => setTitle(presentation.title), [presentation.title]);
-  useEffect(() => setSlug(presentation.slug), [presentation.slug]);
+  // Server values replace the inputs only while the user is not typing in them.
+  const editing = useRef<"title" | "slug" | null>(null);
+  useEffect(() => {
+    if (editing.current !== "title") setTitle(presentation.title);
+  }, [presentation.title]);
+  useEffect(() => {
+    if (editing.current !== "slug") setSlug(presentation.slug);
+  }, [presentation.slug]);
 
   const slugInvalid = !isValidSlug(slug);
   const link = "text-sm py-2 px-3 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest";
@@ -39,7 +46,11 @@ export function PresentationHeader({ presentation, status, onSave, metaError }: 
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onBlur={() => title.trim() && title !== presentation.title && onSave({ title: title.trim() })}
+          onFocus={() => (editing.current = "title")}
+          onBlur={() => {
+            editing.current = null;
+            if (title.trim() && title !== presentation.title) onSave({ title: title.trim() });
+          }}
           className="flex-1 bg-transparent font-headline text-2xl font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary rounded px-1"
         />
         <span className={`text-xs ${status === "saved" ? "text-on-surface-variant" : status === "saving" ? "text-secondary" : "text-error"}`}>
@@ -52,7 +63,11 @@ export function PresentationHeader({ presentation, status, onSave, metaError }: 
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            onBlur={() => !slugInvalid && slug !== presentation.slug && onSave({ slug })}
+            onFocus={() => (editing.current = "slug")}
+            onBlur={() => {
+              editing.current = null;
+              if (!slugInvalid && slug !== presentation.slug) onSave({ slug });
+            }}
             className={`${inputClass} font-code`}
           />
         </div>
