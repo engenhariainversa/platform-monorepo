@@ -14,7 +14,8 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["@repo/database#build", "@repo/slides#build"],
+      "passThroughEnv": ["DATABASE_URL", "JWT_SECRET"],
       "cache": false
     },
     "clean": {
