@@ -14,6 +14,11 @@ import { SectionSlide } from "./templates/section";
 import { BulletsSlide } from "./templates/bullets";
 import { QuoteSlide } from "./templates/quote";
 import { StatsSlide } from "./templates/stats";
+import { SplitSlide } from "./templates/split";
+import { CodeSlide } from "./templates/code";
+import { ClosingSlide } from "./templates/closing";
+import { ComparisonSlide } from "./templates/comparison";
+import { ImageSlide } from "./templates/image";
 
 /** Data a slide cannot hold itself, supplied by the hosting app. */
 export type SlideContext = {
@@ -27,13 +32,18 @@ type RendererProps<K extends SlideTemplateKey> = {
   context: Required<SlideContext>;
 };
 
-const RENDERERS: { [K in SlideTemplateKey]?: (props: RendererProps<K>) => JSX.Element } = {
+const RENDERERS: { [K in SlideTemplateKey]: (props: RendererProps<K>) => JSX.Element } = {
   cover: CoverSlide,
   agenda: AgendaSlide,
   section: SectionSlide,
   bullets: BulletsSlide,
+  split: SplitSlide,
+  code: CodeSlide,
+  closing: ClosingSlide,
   quote: QuoteSlide,
+  comparison: ComparisonSlide,
   stats: StatsSlide,
+  image: ImageSlide,
 };
 
 // Full-bleed templates draw edge to edge and carry no footer bar.
