@@ -8,9 +8,13 @@ import {
   TogglePublicResourceInput,
 } from "./permissions.types";
 import { GqlAuthGuard } from "../auth/auth.guard";
+import { Roles } from "../common/roles.decorator";
+import { RolesGuard } from "../common/roles.guard";
 
+// Admin only: whoever can toggle permissions can grant themselves anything.
 @Resolver()
-@UseGuards(GqlAuthGuard)
+@UseGuards(GqlAuthGuard, RolesGuard)
+@Roles("ADMIN")
 export class PermissionsResolver {
   constructor(private permissionsService: PermissionsService) {}
 
