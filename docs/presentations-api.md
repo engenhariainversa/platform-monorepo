@@ -1,6 +1,6 @@
 # Presentations API (for external agents)
 
-Everything goes through the CMS's GraphQL endpoint: `POST https://<api-host>/graphql`
+Everything goes through the backend API's GraphQL endpoint (not the CMS): `POST https://<api-host>/graphql`
 (dev: `http://localhost:4050/graphql`), JSON body `{ "query": "...", "variables": { ... } }`.
 
 ## 1. Get a key
