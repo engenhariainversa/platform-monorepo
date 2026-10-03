@@ -43,6 +43,25 @@ type AuthPayload {
   user: UserType!
 }
 
+type ApiKey {
+  id: ID!
+  name: String!
+
+  """First 8 characters after ei_, for identification"""
+  prefix: String!
+  expiresAt: DateTime!
+  lastUsedAt: DateTime
+  revokedAt: DateTime
+  createdAt: DateTime!
+}
+
+type CreatedApiKey {
+  apiKey: ApiKey!
+
+  """The full token. Returned only here; store it now."""
+  token: String!
+}
+
 type LiveType {
   id: ID!
   label: String!
@@ -150,6 +169,7 @@ type Query {
   user(id: String!): UserType
   hasAdmin: Boolean!
   me: UserType!
+  apiKeys: [ApiKey!]!
   live: LiveType
   episodes: [EpisodeType!]!
   heroSection: HeroSectionType
@@ -173,6 +193,8 @@ type Mutation {
   deleteUser(id: String!): Boolean!
   login(input: LoginInput!): AuthPayload!
   setupAdmin(input: SetupAdminInput!): AuthPayload!
+  createApiKey(name: String!, expiresIn: ApiKeyExpiry!): CreatedApiKey!
+  revokeApiKey(id: ID!): ApiKey!
   upsertLive(input: UpsertLiveInput!): LiveType!
   createEpisode(input: CreateEpisodeInput!): EpisodeType!
   updateEpisode(id: String!, input: UpdateEpisodeInput!): EpisodeType!
@@ -236,6 +258,12 @@ input SetupAdminInput {
   email: String!
   username: String!
   password: String!
+}
+
+enum ApiKeyExpiry {
+  ONE_HOUR
+  ONE_DAY
+  SEVEN_DAYS
 }
 
 input UpsertLiveInput {

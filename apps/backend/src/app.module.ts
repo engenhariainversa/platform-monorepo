@@ -6,6 +6,7 @@ import { join } from "path";
 import { AppResolver } from "./app.resolver";
 import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
+import { ApiKeysModule } from "./api-keys/api-keys.module";
 import { ContentModule } from "./content/content.module";
 import { UploadModule } from "./upload/upload.module";
 import { RolesModule } from "./roles/roles.module";
@@ -34,6 +35,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
     PermissionsModule,
     UsersModule,
     AuthModule,
+    ApiKeysModule,
     ContentModule,
     UploadModule,
     StatsModule,

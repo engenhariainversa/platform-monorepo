@@ -15,7 +15,7 @@ import { extname, join } from "path";
 import { existsSync, mkdirSync } from "fs";
 import type { Response } from "express";
 import { v4 as uuid } from "uuid";
-import { AuthGuard } from "@nestjs/passport";
+import { HttpJwtOrApiKeyGuard } from "../auth/jwt-or-api-key.guard";
 
 // Absolute path, not one derived from cwd: dev runs the server from the package
 // directory while the production image runs it from the repo root, so a relative
@@ -29,7 +29,7 @@ mkdirSync(UPLOADS_DIR, { recursive: true });
 @Controller("uploads")
 export class UploadController {
   @Post()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(HttpJwtOrApiKeyGuard)
   @UseInterceptors(
     FileInterceptor("file", {
       storage: diskStorage({
