@@ -11,13 +11,13 @@ import { ApiKeyExpiry, ApiKeyType, CreatedApiKeyType } from "./api-keys.types";
 // JWT only (GqlAuthGuard): an API key can never list, mint or revoke keys.
 @Resolver()
 export class ApiKeysResolver {
-  constructor(private readonly apiKeys: ApiKeysService) {}
+  constructor(private readonly apiKeysService: ApiKeysService) {}
 
   @Query(() => [ApiKeyType])
   @UseGuards(GqlAuthGuard, RolesGuard)
   @Resource("apiKeys", "read")
   apiKeys() {
-    return this.apiKeys.list();
+    return this.apiKeysService.list();
   }
 
   @Mutation(() => CreatedApiKeyType)
@@ -28,13 +28,13 @@ export class ApiKeysResolver {
     @Args("name") name: string,
     @Args("expiresIn", { type: () => ApiKeyExpiry }) expiresIn: ApiKeyExpiry,
   ) {
-    return this.apiKeys.create(user.id, name, expiresIn);
+    return this.apiKeysService.create(user.id, name, expiresIn);
   }
 
   @Mutation(() => ApiKeyType)
   @UseGuards(GqlAuthGuard, RolesGuard)
   @Resource("apiKeys", "update")
   revokeApiKey(@Args("id", { type: () => ID }) id: string) {
-    return this.apiKeys.revoke(id);
+    return this.apiKeysService.revoke(id);
   }
 }
