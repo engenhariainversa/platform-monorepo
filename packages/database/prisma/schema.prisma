@@ -251,7 +251,7 @@ model ApiKey {
   prefix      String
   hash        String    @unique
   createdById String    @map("created_by_id")
-  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
   expiresAt   DateTime  @map("expires_at")
   lastUsedAt  DateTime? @map("last_used_at")
   revokedAt   DateTime? @map("revoked_at")

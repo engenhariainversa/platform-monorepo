@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { prisma } from "@repo/database";
+import { Prisma, prisma } from "@repo/database";
+import { GraphQLError } from "graphql";
 import * as bcrypt from "bcryptjs";
 import { CreateUserInput, UpdateUserInput } from "./users.types";
 
@@ -104,7 +105,18 @@ export class UsersService {
   }
 
   async delete(id: string) {
-    return prisma.user.delete({ where: { id } });
+    try {
+      return await prisma.user.delete({ where: { id } });
+    } catch (e) {
+      // API keys cascade; presentations are RESTRICT so a deck is never lost
+      // with its author.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003") {
+        throw new GraphQLError("Este usuário possui apresentações; transfira ou exclua-as antes.", {
+          extensions: { code: "BAD_USER_INPUT" },
+        });
+      }
+      throw e;
+    }
   }
 
   async count() {
