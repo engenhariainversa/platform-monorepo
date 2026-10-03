@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { SlideRenderer, type SlideContext } from "./slide-renderer";
 import { PIPELINE_GRADIENT } from "./canvas";
 import { visibleSlides, type PlayerSlide } from "./navigation";
-import { navActionForKey, useDeckNavigation } from "./use-deck-navigation";
+import { isIgnoredKeyEvent, navActionForKey, useDeckNavigation } from "./use-deck-navigation";
 
 export type PresentationPlayerProps = {
   presentationId: string;
@@ -65,6 +65,7 @@ export function PresentationPlayer({
         dispatch(action);
         return;
       }
+      if (isIgnoredKeyEvent(event)) return;
       if (event.key === "f" || event.key === "F") toggleFullscreen();
       if ((event.key === "p" || event.key === "P") && presenterHref) openPresenter();
     };

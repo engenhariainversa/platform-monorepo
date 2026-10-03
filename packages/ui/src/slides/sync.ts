@@ -26,3 +26,29 @@ export function createSlideSync(presentationId: string) {
     },
   };
 }
+
+/**
+ * Decides when a window announces its slide index. Tracks the last index both
+ * windows agree on (posted or received) and never clears it, so an index
+ * received from the other window is not echoed back, a burst of messages
+ * converges, and moving back to an earlier index is announced again. The first
+ * call is the mount, before the URL hash is applied: it only records the index,
+ * so opening a window never drags the other one to slide 1.
+ */
+export function createSyncGate() {
+  let shared: number | undefined;
+  return {
+    receive(index: number) {
+      shared = index;
+    },
+    shouldPost(index: number): boolean {
+      if (shared === undefined) {
+        shared = index;
+        return false;
+      }
+      if (index === shared) return false;
+      shared = index;
+      return true;
+    },
+  };
+}

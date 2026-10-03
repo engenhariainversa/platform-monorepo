@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useReducer, useRef } from "react";
-import { createSlideSync } from "./sync";
+import { createSlideSync, createSyncGate } from "./sync";
 import { indexFromHash, navReducer, type NavAction } from "./navigation";
 
 /**
@@ -12,10 +12,9 @@ import { indexFromHash, navReducer, type NavAction } from "./navigation";
 export function useDeckNavigation(presentationId: string, count: number) {
   const [state, dispatch] = useReducer(navReducer, { index: 0, count });
   const syncRef = useRef<ReturnType<typeof createSlideSync> | null>(null);
-  // Index last received from the other window; not echoed back.
-  const remoteIndex = useRef<number | null>(null);
-  const indexRef = useRef(state.index);
-  indexRef.current = state.index;
+  const gateRef = useRef<ReturnType<typeof createSyncGate> | null>(null);
+  gateRef.current ??= createSyncGate();
+  const gate = gateRef.current;
 
   useEffect(() => dispatch({ type: "resize", count }), [count]);
 
@@ -35,10 +34,7 @@ export function useDeckNavigation(presentationId: string, count: number) {
     const sync = createSlideSync(presentationId);
     syncRef.current = sync;
     const unsubscribe = sync.subscribe((index) => {
-      // Already there: no re-render follows, so a marker set now would go stale
-      // and swallow the next local move to this index.
-      if (index === indexRef.current) return;
-      remoteIndex.current = index;
+      gate.receive(index);
       dispatch({ type: "goto", index });
     });
     return () => {
@@ -46,25 +42,25 @@ export function useDeckNavigation(presentationId: string, count: number) {
       sync.close();
       syncRef.current = null;
     };
-  }, [presentationId]);
+  }, [presentationId, gate]);
 
   useEffect(() => {
-    if (remoteIndex.current === state.index) {
-      remoteIndex.current = null;
-      return;
-    }
-    syncRef.current?.post(state.index);
-  }, [state.index]);
+    if (gate.shouldPost(state.index)) syncRef.current?.post(state.index);
+  }, [state.index, gate]);
 
   return { index: state.index, count: state.count, dispatch };
 }
 
-/** Arrow/space/PageUp/PageDown/Home/End, ignored while typing in a field. */
-export function navActionForKey(event: KeyboardEvent): NavAction | null {
+/** Typing in a field, or a browser/OS shortcut (Ctrl/Cmd/Alt held). */
+export function isIgnoredKeyEvent(event: KeyboardEvent): boolean {
+  if (event.ctrlKey || event.metaKey || event.altKey) return true;
   const target = event.target as HTMLElement | null;
-  if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) {
-    return null;
-  }
+  return !!target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+}
+
+/** Arrow/space/PageUp/PageDown/Home/End, ignored while typing or with modifiers. */
+export function navActionForKey(event: KeyboardEvent): NavAction | null {
+  if (isIgnoredKeyEvent(event)) return null;
   switch (event.key) {
     case "ArrowRight":
     case "ArrowDown":
