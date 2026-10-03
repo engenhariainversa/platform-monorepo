@@ -85,9 +85,11 @@ services:
       - PORT=4052
       - NEXT_PUBLIC_API_URL=http://localhost:4050
       - NEXT_PUBLIC_GRAPHQL_PATH=/graphql
+      - API_INTERNAL_URL=http://backend:4050
     volumes:
       - ./apps/landing/app:/app/apps/landing/app
       - ./apps/landing/components:/app/apps/landing/components
+      - ./apps/landing/lib:/app/apps/landing/lib
       - ./apps/landing/public:/app/apps/landing/public
       - ./packages/ui/src:/app/packages/ui/src
       - ./packages/graphql/src:/app/packages/graphql/src

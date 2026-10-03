@@ -3,3 +3,4 @@ export * from "./auth";
 export * from "./create-client";
 export * from "./upload";
 export * from "./errors";
+export * from "./document-text";
