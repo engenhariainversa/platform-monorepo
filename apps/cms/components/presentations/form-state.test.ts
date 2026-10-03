@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SLIDE_TEMPLATES, type FieldDescriptor } from "@repo/slides";
-import { emptyValueFor, formatLineList, getAt, issuesByPath, parseLineList, pathKey, setAt } from "./form-state";
+import { emptyValueFor, firstIssueUnder, formatLineList, getAt, issuesByPath, parseLineList, pathKey, setAt } from "./form-state";
 
 describe("pathKey", () => {
   it("joins with dots", () => {
@@ -87,5 +87,22 @@ describe("parseLineList / formatLineList", () => {
     const parsed = parseLineList("2, 4-5") as number[];
     const result = SLIDE_TEMPLATES.code.schema.safeParse({ code: "a\nb\nc\nd\ne", language: "ts", highlightLines: parsed });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("firstIssueUnder", () => {
+  it("prefers the exact key, then the first nested one", () => {
+    expect(firstIssueUnder({ highlightLines: "A", "highlightLines.0": "B" }, "highlightLines")).toBe("A");
+    expect(firstIssueUnder({ "highlightLines.0": "Mínimo 1" }, "highlightLines")).toBe("Mínimo 1");
+    expect(firstIssueUnder({ highlightLinesX: "no", title: "t" }, "highlightLines")).toBeUndefined();
+  });
+
+  it("surfaces the schema's per-line issue for highlightLines", () => {
+    const result = SLIDE_TEMPLATES.code.schema.safeParse({ code: "a", language: "ts", highlightLines: [0] });
+    expect(result.success).toBe(false);
+    const issues: Record<string, string> = {};
+    if (!result.success) for (const i of result.error.issues) issues[i.path.join(".")] ??= i.message;
+    expect(issues["highlightLines.0"]).toBeDefined();
+    expect(firstIssueUnder(issues, "highlightLines")).toBe(issues["highlightLines.0"]);
   });
 });

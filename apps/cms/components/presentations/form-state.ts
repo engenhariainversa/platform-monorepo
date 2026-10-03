@@ -90,3 +90,11 @@ export function formatLineList(value: unknown): string {
   if (Array.isArray(value)) return value.join(", ");
   return typeof value === "string" ? value : "";
 }
+
+/** The issue at `key`, else the first one nested under it (`key.0`, `key.1.title`...). */
+export function firstIssueUnder(issues: Record<string, string>, key: string): string | undefined {
+  if (key in issues) return issues[key];
+  const prefix = `${key}.`;
+  const nested = Object.keys(issues).find((k) => k.startsWith(prefix));
+  return nested === undefined ? undefined : issues[nested];
+}

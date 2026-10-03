@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { FieldDescriptor } from "@repo/slides";
 import { getUploadUrl, uploadFile } from "@repo/graphql";
-import { emptyValueFor, formatLineList, LINE_LIST_FIELDS, parseLineList, pathKey, type Path } from "./form-state";
+import { emptyValueFor, firstIssueUnder, formatLineList, LINE_LIST_FIELDS, parseLineList, pathKey, type Path } from "./form-state";
 
 export const inputClass =
   "w-full bg-surface-container-high border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:ring-2 focus:ring-primary focus:outline-none text-sm";
@@ -56,7 +56,7 @@ export function FieldInput({ field, path, value, issues, onChange }: FieldInputP
   switch (field.kind) {
     case "text": {
       if (LINE_LIST_FIELDS.has(field.name) && path.length === 1) {
-        return <LineListInput field={field} path={path} value={value} message={message} onChange={onChange} />;
+        return <LineListInput field={field} path={path} value={value} message={firstIssueUnder(issues, key)} onChange={onChange} />;
       }
       const text = typeof value === "string" ? value : "";
       return (
