@@ -6,12 +6,14 @@ import { GET_PRESENTATION, GET_SOCIAL_LINKS, getUploadUrl } from "@repo/graphql"
 import type { Presentation, SocialLink } from "@repo/types";
 import type { PlayerSlide, SlideContext } from "@repo/ui";
 
-export function useDeck(id: string) {
-  const { data, loading } = useQuery<{ presentation: Presentation | null }>(GET_PRESENTATION, {
+// `fresh` skips the cache so the deck always reflects the server (used by print).
+// `loading` stays true until both the presentation and the social links settle.
+export function useDeck(id: string, options: { fresh?: boolean } = {}) {
+  const { data, loading: presentationLoading } = useQuery<{ presentation: Presentation | null }>(GET_PRESENTATION, {
     variables: { id },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: options.fresh ? "network-only" : "cache-and-network",
   });
-  const { data: social } = useQuery<{ socialLinks: SocialLink[] }>(GET_SOCIAL_LINKS);
+  const { data: social, loading: socialLoading } = useQuery<{ socialLinks: SocialLink[] }>(GET_SOCIAL_LINKS);
 
   const presentation = data?.presentation ?? null;
   const slides = useMemo<PlayerSlide[]>(
@@ -29,5 +31,5 @@ export function useDeck(id: string) {
     [social],
   );
 
-  return { presentation, slides, context, loading };
+  return { presentation, slides, context, loading: presentationLoading || socialLoading };
 }
