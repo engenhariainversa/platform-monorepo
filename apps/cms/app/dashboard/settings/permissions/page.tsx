@@ -18,6 +18,9 @@ const RESOURCE_LABELS: Record<string, string> = {
   pages: "Páginas",
 };
 
+// Mirrors NON_PUBLIC_RESOURCES in the backend, which rejects making these public.
+const NON_PUBLIC_RESOURCES = new Set(["presentations", "apiKeys", "users"]);
+
 const ACTION_LABELS: Record<string, string> = {
   create: "Criar",
   read: "Ler",
@@ -261,7 +264,9 @@ export default function PermissionsPage() {
         </div>
 
         <div className="divide-y divide-outline-variant/50">
-          {Object.entries(RESOURCE_LABELS).map(([resource, label]) => (
+          {Object.entries(RESOURCE_LABELS)
+            .filter(([resource]) => !NON_PUBLIC_RESOURCES.has(resource))
+            .map(([resource, label]) => (
             <div
               key={resource}
               className="flex items-center justify-between px-4 py-3"
