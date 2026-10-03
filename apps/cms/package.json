@@ -6,7 +6,8 @@
     "dev": "next dev --port 4051",
     "build": "next build",
     "start": "next start --port 4051",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "next": "14.2.3",
@@ -24,6 +25,7 @@
     "tailwindcss": "^3.4.3",
     "postcss": "^8.4.38",
     "autoprefixer": "^10.4.19",
+    "vitest": "^3.2.0",
     "@repo/tsconfig": "workspace:*",
     "@repo/eslint-config": "workspace:*"
   }

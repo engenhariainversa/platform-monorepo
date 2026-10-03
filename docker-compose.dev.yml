@@ -63,6 +63,7 @@ services:
     volumes:
       - ./apps/cms/app:/app/apps/cms/app
       - ./apps/cms/components:/app/apps/cms/components
+      - ./apps/cms/lib:/app/apps/cms/lib
       - ./packages/ui/src:/app/packages/ui/src
       - ./packages/graphql/src:/app/packages/graphql/src
       - ./packages/slides/src:/app/packages/slides/src
