@@ -27,6 +27,14 @@ export interface UpdatePresentationData {
 
 const WITH_SLIDES = { slides: { orderBy: { order: "asc" as const } } };
 const MAX_TITLE = 120;
+/** Mirrors the limit enforced by `isValidSlug` in @repo/slides. */
+const MAX_SLUG = 80;
+
+/** `base-n`, cutting the base (never the suffix) so the result stays within MAX_SLUG. */
+function withSuffix(base: string, n: number): string {
+  const suffix = `-${n}`;
+  return `${base.slice(0, MAX_SLUG - suffix.length).replace(/-+$/, "")}${suffix}`;
+}
 
 /** What an anonymous reader may see: no speaker notes, no hidden slides. */
 export function toAnonymousView(p: PresentationWithSlides): PresentationWithSlides {
@@ -183,8 +191,11 @@ export class PresentationsService {
     const used = new Set(existing.map((e) => e.slug));
     if (!used.has(base)) return base;
     for (let n = 2; ; n++) {
-      const candidate = `${base}-${n}`;
-      if (!used.has(candidate)) return candidate;
+      const candidate = withSuffix(base, n);
+      if (used.has(candidate)) continue;
+      if (candidate.startsWith(base)) return candidate;
+      // The base was cut to fit the suffix, so the prefetch above did not cover it.
+      if (!(await prisma.presentation.findUnique({ where: { slug: candidate } }))) return candidate;
     }
   }
 }

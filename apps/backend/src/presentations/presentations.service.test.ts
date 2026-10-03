@@ -2,6 +2,7 @@ import { UnauthorizedException } from "@nestjs/common";
 import { GraphQLError } from "graphql";
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@repo/database";
+import { isValidSlug } from "@repo/slides";
 import { createUser, resetDatabase } from "../../test/helpers";
 import { PresentationsService, type Viewer } from "./presentations.service";
 
@@ -45,6 +46,21 @@ describe("PresentationsService", () => {
     it("falls back to `apresentacao` for punctuation- or emoji-only titles", async () => {
       expect((await service.create({ title: "?!… 🎉🚀" }, userId)).slug).toBe("apresentacao");
       expect((await service.create({ title: "🎉" }, userId)).slug).toBe("apresentacao-2");
+    });
+
+    it("keeps suffixed slugs of long titles within 80 characters", async () => {
+      const title = "Engenharia ".repeat(11).slice(0, 120);
+      const first = await service.create({ title }, userId);
+      const second = await service.create({ title }, userId);
+      const third = await service.create({ title }, userId);
+      const copy = await service.duplicate(first.id, userId);
+      for (const p of [first, second, third, copy]) {
+        expect(p.slug.length).toBeLessThanOrEqual(80);
+        expect(isValidSlug(p.slug)).toBe(true);
+      }
+      expect(second.slug).toMatch(/-2$/);
+      expect(third.slug).toMatch(/-3$/);
+      expect(copy.slug).toMatch(/-4$/);
     });
 
     it("rejects an explicit slug that is taken or malformed", async () => {
