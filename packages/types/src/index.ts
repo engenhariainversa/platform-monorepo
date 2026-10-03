@@ -10,3 +10,4 @@ export * from "./footer-section";
 export * from "./social-link";
 export * from "./landing";
 export * from "./dashboard-stats";
+export * from "./presentation";

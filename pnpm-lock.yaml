@@ -135,6 +135,9 @@ importers:
       '@repo/graphql':
         specifier: workspace:*
         version: link:../../packages/graphql
+      '@repo/slides':
+        specifier: workspace:*
+        version: link:../../packages/slides
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -181,6 +184,9 @@ importers:
       '@repo/graphql':
         specifier: workspace:*
         version: link:../../packages/graphql
+      '@repo/slides':
+        specifier: workspace:*
+        version: link:../../packages/slides
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -313,6 +319,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@repo/slides':
+        specifier: workspace:*
+        version: link:../slides
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
