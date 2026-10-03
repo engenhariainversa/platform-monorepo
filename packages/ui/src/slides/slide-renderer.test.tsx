@@ -83,6 +83,18 @@ describe("SlideRenderer — all templates", () => {
     expect(html).toContain("adb shell pm list packages");
   });
 
+  // Classes below are only produced when the grammar from prismjs/components is registered.
+  it.each([
+    ["bash", 'echo "oi"', 'class="token string"'],
+    ["sql", "SELECT id FROM users;", 'class="token keyword"'],
+    ["dart", "final x = 1;", 'class="token keyword"'],
+    ["diff", "+added\n-removed", 'class="token inserted-sign inserted line"'],
+    ["diff", "+added\n-removed", 'class="token deleted-sign deleted line"'],
+  ] as const)("loads the %s grammar (%s)", (language, code, expected) => {
+    const html = renderToStaticMarkup(<SlideRenderer template="code" content={{ language, code }} />);
+    expect(html).toContain(expected);
+  });
+
   it("marks highlighted code lines", () => {
     const html = renderToStaticMarkup(
       <SlideRenderer
