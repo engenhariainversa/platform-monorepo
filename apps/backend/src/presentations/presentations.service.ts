@@ -63,6 +63,17 @@ const isUniqueViolation = (e: unknown) =>
 
 @Injectable()
 export class PresentationsService {
+  private readonly unpublishedListeners = new Set<(presentationId: string) => void>();
+
+  /** Called when a presentation is trashed or stops being PUBLIC (ends its live session). */
+  onUnpublished(listener: (presentationId: string) => void): void {
+    this.unpublishedListeners.add(listener);
+  }
+
+  private notifyUnpublished(presentationId: string): void {
+    for (const listener of this.unpublishedListeners) listener(presentationId);
+  }
+
   list(trash: boolean): Promise<PresentationWithSlides[]> {
     return prisma.presentation.findMany({
       where: { deletedAt: trash ? { not: null } : null },
@@ -126,7 +137,9 @@ export class PresentationsService {
       data.slug = input.slug;
     }
     try {
-      return await prisma.presentation.update({ where: { id }, data, include: WITH_SLIDES });
+      const updated = await prisma.presentation.update({ where: { id }, data, include: WITH_SLIDES });
+      if (updated.visibility !== "PUBLIC") this.notifyUnpublished(id);
+      return updated;
     } catch (e) {
       if (isUniqueViolation(e)) throw slugTaken(input.slug as string);
       throw e;
@@ -157,6 +170,7 @@ export class PresentationsService {
     const p = await prisma.presentation.findUnique({ where: { id } });
     if (!p) throw notFound("Apresentação não encontrada");
     if (!p.deletedAt) await prisma.presentation.update({ where: { id }, data: { deletedAt: new Date() } });
+    this.notifyUnpublished(id);
     return true;
   }
 

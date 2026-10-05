@@ -224,9 +224,83 @@ type DashboardStatsType {
   lives: Int!
 }
 
+type LivePointer {
+  """0..1 across the 1920×1080 canvas"""
+  x: Float!
+  y: Float!
+  visible: Boolean!
+}
+
+type ReactionCount {
+  kind: ReactionKind!
+  count: Int!
+}
+
+enum ReactionKind {
+  CLAP
+  FIRE
+  MIND_BLOWN
+  LAUGH
+  HEART
+  THINKING
+}
+
+type LiveState {
+  isLive: Boolean!
+  startedAt: DateTime
+  slideId: ID
+  showViewerCount: Boolean!
+  showReactionsOnScreen: Boolean!
+
+  """null for the audience while the counter is hidden"""
+  viewerCount: Int
+
+  """Presenters only"""
+  peakViewers: Int
+
+  """Presenters only"""
+  reactionTotals: [ReactionCount!]
+}
+
+type LiveEvent {
+  type: LiveEventType!
+
+  """STARTED, SLIDE"""
+  slideId: ID
+
+  """POINTER"""
+  pointer: LivePointer
+
+  """VIEWERS"""
+  viewerCount: Int
+
+  """VIEWERS, presenters only"""
+  peakViewers: Int
+
+  """REACTIONS"""
+  reactions: [ReactionCount!]
+
+  """OPTIONS"""
+  showViewerCount: Boolean
+
+  """OPTIONS"""
+  showReactionsOnScreen: Boolean
+}
+
+enum LiveEventType {
+  STARTED
+  SLIDE
+  POINTER
+  VIEWERS
+  REACTIONS
+  OPTIONS
+  ENDED
+}
+
 type Query {
   hello: String!
   pages: [CmsPageType!]!
+  liveState(slug: String!): LiveState!
   hasAdmin: Boolean!
   me: UserType!
   users: [UserType!]!
@@ -254,6 +328,9 @@ type Query {
 
 type Mutation {
   createPage(slug: String!, title: String!, content: String!): CmsPageType!
+  startLive(presentationId: ID!, slideId: ID!): LiveState!
+  stopLive(presentationId: ID!): Boolean!
+  setLiveSlide(presentationId: ID!, slideId: ID!): Boolean!
   login(input: LoginInput!): AuthPayload!
   setupAdmin(input: SetupAdminInput!): AuthPayload!
   createUser(input: CreateUserInput!): UserType!
@@ -456,4 +533,8 @@ input UpdateSocialLinkInput {
   label: String
   url: String
   order: Int
+}
+
+type Subscription {
+  liveEvents(slug: String!): LiveEvent!
 }
