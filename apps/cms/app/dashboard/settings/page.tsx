@@ -15,6 +15,12 @@ const settingsItems = [
     icon: "🏷️",
     description: "Gerencie os roles do sistema",
   },
+  {
+    label: "Chaves de API",
+    href: "/dashboard/settings/api-keys",
+    icon: "🔑",
+    description: "Gere chaves temporárias para criar apresentações pela API",
+  },
 ];
 
 export default function SettingsPage() {

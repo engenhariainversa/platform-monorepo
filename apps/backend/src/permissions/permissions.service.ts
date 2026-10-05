@@ -1,8 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@repo/database";
+import { GraphQLError } from "graphql";
 
-const RESOURCES = ["hero", "about", "live", "episodes", "users", "pages"];
+const RESOURCES = ["hero", "about", "live", "episodes", "users", "pages", "apiKeys", "presentations"];
 const ACTIONS = ["create", "read", "update", "delete"];
+
+// Resources that must never be readable without a role permission: marking one
+// public would expose private decks (with notes), API keys or user data to
+// every caller.
+export const NON_PUBLIC_RESOURCES = new Set(["presentations", "apiKeys", "users"]);
 
 @Injectable()
 export class PermissionsService {
@@ -65,6 +71,12 @@ export class PermissionsService {
    * Returns true if now public, false if now private.
    */
   async togglePublicResource(resource: string): Promise<boolean> {
+    if (NON_PUBLIC_RESOURCES.has(resource)) {
+      throw new GraphQLError(`O recurso "${resource}" não pode ser público`, {
+        extensions: { code: "BAD_USER_INPUT" },
+      });
+    }
+
     const existing = await prisma.publicResource.findUnique({
       where: { resource },
     });
@@ -92,8 +104,9 @@ export class PermissionsService {
       return true;
     }
 
-    // Check public access for reads
-    if (action === "read") {
+    // Check public access for reads (never for non-public resources, even if
+    // an old row says otherwise)
+    if (action === "read" && !NON_PUBLIC_RESOURCES.has(resource)) {
       const publicResource = await prisma.publicResource.findUnique({
         where: { resource },
       });

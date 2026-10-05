@@ -83,6 +83,9 @@ services:
       - PORT=4052
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
       - NEXT_PUBLIC_GRAPHQL_PATH=${NEXT_PUBLIC_GRAPHQL_PATH:?NEXT_PUBLIC_GRAPHQL_PATH is required}
+      # Server-side fetches (public decks) go straight to the backend over the
+      # compose network; NEXT_PUBLIC_API_URL is the browser-facing address.
+      - API_INTERNAL_URL=http://backend:4050
     restart: unless-stopped
 
 volumes:

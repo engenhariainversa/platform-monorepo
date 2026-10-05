@@ -28,6 +28,7 @@ COPY . .
 # ============================================================
 FROM source AS database-build
 RUN pnpm --filter @repo/database build
+RUN pnpm --filter @repo/slides build
 
 # ============================================================
 # Backend (NestJS — port 4050)
@@ -70,7 +71,7 @@ COPY --from=cms-build /app/apps/cms/package.json ./apps/cms/package.json
 COPY --from=cms-build /app/apps/cms/next.config.* ./apps/cms/
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/cms/node_modules ./apps/cms/node_modules
-COPY --from=deps /app/packages ./packages
+COPY --from=cms-build /app/packages ./packages
 COPY package.json pnpm-workspace.yaml ./
 EXPOSE 4051
 WORKDIR /app/apps/cms
@@ -79,7 +80,7 @@ CMD ["npx", "next", "start", "--port", "4051"]
 # ============================================================
 # Landing (Next.js — port 4052)
 # ============================================================
-FROM source AS landing-build
+FROM database-build AS landing-build
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL=http://localhost:4050
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
@@ -97,7 +98,7 @@ COPY --from=landing-build /app/apps/landing/package.json ./apps/landing/package.
 COPY --from=landing-build /app/apps/landing/next.config.* ./apps/landing/
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/landing/node_modules ./apps/landing/node_modules
-COPY --from=deps /app/packages ./packages
+COPY --from=landing-build /app/packages ./packages
 COPY package.json pnpm-workspace.yaml ./
 EXPOSE 4052
 WORKDIR /app/apps/landing

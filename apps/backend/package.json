@@ -5,7 +5,8 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
-    "start": "nest start"
+    "start": "nest start",
+    "test": "vitest run"
   },
   "dependencies": {
     "@apollo/server": "^5.5.1",
@@ -19,10 +20,13 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11",
     "@repo/database": "workspace:*",
+    "@repo/slides": "workspace:*",
     "bcryptjs": "^3.0.3",
     "graphql": "^16.14.2",
+    "graphql-type-json": "^0.3.2",
     "multer": "^2.2.0",
     "passport": "^0.7.0",
+    "passport-custom": "^1.1.1",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -31,12 +35,18 @@
   "devDependencies": {
     "@nestjs/cli": "^11",
     "@nestjs/schematics": "^11",
+    "@nestjs/testing": "^11",
     "@repo/tsconfig": "workspace:*",
+    "@swc/core": "^1.7.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^6.0.2",
     "@types/uuid": "^11.0.0",
-    "typescript": "^5.4.5"
+    "supertest": "^7.0.0",
+    "typescript": "^5.4.5",
+    "unplugin-swc": "^1.5.1",
+    "vitest": "^3.2.0"
   }
 }

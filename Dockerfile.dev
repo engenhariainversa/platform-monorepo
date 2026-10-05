@@ -22,3 +22,4 @@ COPY . .
 
 # Generate Prisma client AND compile the database package
 RUN pnpm --filter @repo/database build
+RUN pnpm --filter @repo/slides build

@@ -43,6 +43,70 @@ type AuthPayload {
   user: UserType!
 }
 
+type ApiKey {
+  id: ID!
+  name: String!
+
+  """First 8 characters after ei_, for identification"""
+  prefix: String!
+  expiresAt: DateTime!
+  lastUsedAt: DateTime
+  revokedAt: DateTime
+  createdAt: DateTime!
+}
+
+type CreatedApiKey {
+  apiKey: ApiKey!
+
+  """The full token. Returned only here; store it now."""
+  token: String!
+}
+
+type Slide {
+  id: ID!
+  order: Int!
+  template: String!
+  content: JSON!
+
+  """null for anonymous readers"""
+  notes: String
+  hidden: Boolean!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type Presentation {
+  id: ID!
+  slug: String!
+  title: String!
+  description: String
+  visibility: PresentationVisibility!
+
+  """Ordered; hidden slides omitted for anonymous readers"""
+  slides: [Slide!]!
+  deletedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  slideCount: Int!
+}
+
+enum PresentationVisibility {
+  PUBLIC
+  PRIVATE
+  MEMBERS
+}
+
+type SlideTemplateInfo {
+  key: String!
+  label: String!
+  description: String!
+  jsonSchema: JSON!
+  example: JSON!
+}
+
 type LiveType {
   id: ID!
   label: String!
@@ -150,6 +214,11 @@ type Query {
   user(id: String!): UserType
   hasAdmin: Boolean!
   me: UserType!
+  apiKeys: [ApiKey!]!
+  presentations(trash: Boolean = false): [Presentation!]!
+  presentation(id: ID!): Presentation
+  presentationBySlug(slug: String!): Presentation
+  slideTemplates: [SlideTemplateInfo!]!
   live: LiveType
   episodes: [EpisodeType!]!
   heroSection: HeroSectionType
@@ -173,6 +242,19 @@ type Mutation {
   deleteUser(id: String!): Boolean!
   login(input: LoginInput!): AuthPayload!
   setupAdmin(input: SetupAdminInput!): AuthPayload!
+  createApiKey(name: String!, expiresIn: ApiKeyExpiry!): CreatedApiKey!
+  revokeApiKey(id: ID!): ApiKey!
+  createPresentation(input: CreatePresentationInput!): Presentation!
+  updatePresentation(id: ID!, input: UpdatePresentationInput!): Presentation!
+  duplicatePresentation(id: ID!): Presentation!
+  deletePresentation(id: ID!): Boolean!
+  restorePresentation(id: ID!): Presentation!
+  purgePresentation(id: ID!): Boolean!
+  replaceSlides(presentationId: ID!, slides: [SlideInput!]!): Presentation!
+  createSlide(presentationId: ID!, input: SlideInput!, position: Int): Slide!
+  updateSlide(id: ID!, input: UpdateSlideInput!): Slide!
+  deleteSlide(id: ID!): Boolean!
+  reorderSlides(presentationId: ID!, ids: [ID!]!): [Slide!]!
   upsertLive(input: UpsertLiveInput!): LiveType!
   createEpisode(input: CreateEpisodeInput!): EpisodeType!
   updateEpisode(id: String!, input: UpdateEpisodeInput!): EpisodeType!
@@ -236,6 +318,41 @@ input SetupAdminInput {
   email: String!
   username: String!
   password: String!
+}
+
+enum ApiKeyExpiry {
+  ONE_HOUR
+  ONE_DAY
+  SEVEN_DAYS
+}
+
+input CreatePresentationInput {
+  title: String!
+  slug: String
+  description: String
+  visibility: PresentationVisibility
+  slides: [SlideInput!]
+}
+
+input SlideInput {
+  template: String!
+  content: JSON!
+  notes: String
+  hidden: Boolean
+}
+
+input UpdatePresentationInput {
+  title: String
+  slug: String
+  description: String
+  visibility: PresentationVisibility
+}
+
+input UpdateSlideInput {
+  template: String
+  content: JSON
+  notes: String
+  hidden: Boolean
 }
 
 input UpsertLiveInput {

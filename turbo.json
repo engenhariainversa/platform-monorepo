@@ -13,6 +13,11 @@
     "lint": {
       "dependsOn": ["^build"]
     },
+    "test": {
+      "dependsOn": ["@repo/database#build", "@repo/slides#build"],
+      "passThroughEnv": ["DATABASE_URL", "JWT_SECRET"],
+      "cache": false
+    },
     "clean": {
       "cache": false
     }

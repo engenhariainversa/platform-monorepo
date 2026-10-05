@@ -9,3 +9,5 @@ export * from "./footer";
 export * from "./live";
 export * from "./landing";
 export * from "./stats";
+export * from "./presentations";
+export * from "./api-keys";

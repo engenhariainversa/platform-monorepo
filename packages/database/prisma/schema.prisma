@@ -36,6 +36,8 @@ model User {
   password  String
   roleId    String   @map("role_id")
   role      Role     @relation(fields: [roleId], references: [id])
+  presentations Presentation[]
+  apiKeys       ApiKey[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -190,4 +192,70 @@ model EpisodesButton {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("episodes_button")
+}
+
+// ── Presentations ────────────────────────────────────
+
+enum PresentationVisibility {
+  PUBLIC
+  PRIVATE
+  // Modelled only: behaves as PRIVATE until the members area exists.
+  MEMBERS
+}
+
+// A slide deck. Slides are built from the templates in @repo/slides; the
+// backend validates every slide write against them.
+model Presentation {
+  id          String                 @id @default(uuid())
+  slug        String                 @unique
+  title       String
+  description String?
+  visibility  PresentationVisibility @default(PRIVATE)
+  createdById String                 @map("created_by_id")
+  createdBy   User                   @relation(fields: [createdById], references: [id])
+  // Soft delete: set by deletePresentation, which API keys can also call. Only
+  // purgePresentation, which requires a logged-in user, removes the row.
+  deletedAt   DateTime?              @map("deleted_at")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+  slides      Slide[]
+
+  @@map("presentations")
+}
+
+model Slide {
+  id             String       @id @default(uuid())
+  presentationId String       @map("presentation_id")
+  presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  // Rewritten in a transaction on every reorder, like Episode and SocialLink.
+  order          Int          @default(0)
+  // Template key from @repo/slides. A string, not an enum, so adding a
+  // template needs no migration; the registry rejects unknown keys on write.
+  template       String
+  content        Json
+  notes          String       @default("")
+  hidden         Boolean      @default(false)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@index([presentationId, order])
+  @@map("slides")
+}
+
+// Short-lived bearer token for external agents (e.g. Claude) to manage
+// presentations. Only the SHA-256 of the token is stored.
+model ApiKey {
+  id          String    @id @default(uuid())
+  name        String
+  // First 8 characters after "ei_", shown in the CMS list.
+  prefix      String
+  hash        String    @unique
+  createdById String    @map("created_by_id")
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime  @map("expires_at")
+  lastUsedAt  DateTime? @map("last_used_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("api_keys")
 }
