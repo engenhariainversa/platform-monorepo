@@ -1,5 +1,13 @@
+import { EventEmitter } from "events";
 import { describe, expect, it } from "vitest";
-import { clientIp, normalizeViewerId, originAllowed } from "./socket-auth.service";
+import {
+  clientIp,
+  normalizeViewerId,
+  originAllowed,
+  SocketAuthService,
+  type SocketContext,
+} from "./socket-auth.service";
+import { SocketRegistry } from "./socket-registry";
 
 describe("clientIp", () => {
   it("prefers CF-Connecting-IP, then the first X-Forwarded-For hop, then the socket address", () => {
@@ -35,5 +43,47 @@ describe("normalizeViewerId", () => {
     expect(normalizeViewerId(42, "socket-1")).toBe("socket-1");
     expect(normalizeViewerId({ id: "x" }, "socket-1")).toBe("socket-1");
     expect(normalizeViewerId("x".repeat(10_000), "socket-1")).toBe("socket-1");
+  });
+});
+
+describe("SocketAuthService.onConnect", () => {
+  const OPEN = 1;
+  const CLOSED = 3;
+
+  function fakeSocket(readyState: number) {
+    const socket = Object.assign(new EventEmitter(), { OPEN, readyState, close: () => {} });
+    return socket;
+  }
+
+  function setup(readyStateAfterAuth: number) {
+    const registry = new SocketRegistry();
+    const socket = fakeSocket(OPEN);
+    // The client goes away while the credential lookup is in flight.
+    const apiKeys = {
+      authenticate: async () => {
+        socket.readyState = readyStateAfterAuth;
+        return { id: "user-1" };
+      },
+    };
+    const service = new SocketAuthService(registry, {} as never, {} as never, apiKeys as never);
+    const ctx = {
+      connectionParams: { authorization: "Bearer ei_key" },
+      extra: { socket, request: { headers: {}, socket: { remoteAddress: "1.1.1.1" } } },
+    } as unknown as SocketContext;
+    return { registry, socket, service, ctx };
+  }
+
+  it("does not register a socket that closed while authenticating", async () => {
+    const { registry, service, ctx } = setup(CLOSED);
+    expect(await service.onConnect(ctx)).toBe(false);
+    expect(registry.countForIp("1.1.1.1")).toBe(0);
+  });
+
+  it("frees the slot when an acknowledged socket closes, even without onDisconnect", async () => {
+    const { registry, socket, service, ctx } = setup(OPEN);
+    expect(await service.onConnect(ctx)).toBe(true);
+    expect(registry.countForIp("1.1.1.1")).toBe(1);
+    socket.emit("close", 1000, "");
+    expect(registry.countForIp("1.1.1.1")).toBe(0);
   });
 });

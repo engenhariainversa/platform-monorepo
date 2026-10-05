@@ -159,6 +159,13 @@ export class SocketAuthService {
       socket.close(CLOSE_TOO_MANY, "Too many connections");
       return false;
     }
+    // graphql-ws skips onDisconnect for a socket that closes before it is
+    // acknowledged, i.e. while the credential lookup above was in flight.
+    if (socket.readyState !== socket.OPEN) {
+      this.registry.remove(socketId);
+      return false;
+    }
+    socket.once("close", () => this.registry.remove(socketId));
     ctx.extra.session = session;
     return true;
   }
