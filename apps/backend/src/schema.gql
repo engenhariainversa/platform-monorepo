@@ -331,6 +331,8 @@ type Mutation {
   startLive(presentationId: ID!, slideId: ID!): LiveState!
   stopLive(presentationId: ID!): Boolean!
   setLiveSlide(presentationId: ID!, slideId: ID!): Boolean!
+  movePointer(presentationId: ID!, x: Float!, y: Float!, visible: Boolean!): Boolean!
+  setLiveOptions(presentationId: ID!, showViewerCount: Boolean, showReactionsOnScreen: Boolean): LiveState!
   login(input: LoginInput!): AuthPayload!
   setupAdmin(input: SetupAdminInput!): AuthPayload!
   createUser(input: CreateUserInput!): UserType!

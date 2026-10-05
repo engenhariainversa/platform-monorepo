@@ -1,5 +1,5 @@
 import { UnauthorizedException, UseGuards } from "@nestjs/common";
-import { Args, Context, ID, Mutation, Query, Resolver, Subscription } from "@nestjs/graphql";
+import { Args, Context, Float, ID, Mutation, Query, Resolver, Subscription } from "@nestjs/graphql";
 import { prisma } from "@repo/database";
 import type { AuthenticatedUser } from "../auth/auth-kind";
 import { CurrentUser } from "../common/current-user.decorator";
@@ -99,5 +99,27 @@ export class LiveResolver {
     const slide = await prisma.slide.findFirst({ where: { id: slideId, presentationId }, select: { id: true } });
     if (!slide) throw badInput("O slide não pertence a esta apresentação");
     return this.live.setSlide(presentationId, slideId);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlLiveControlGuard)
+  movePointer(
+    @Args("presentationId", { type: () => ID }) presentationId: string,
+    @Args("x", { type: () => Float }) x: number,
+    @Args("y", { type: () => Float }) y: number,
+    @Args("visible") visible: boolean,
+  ) {
+    return this.live.movePointer(presentationId, x, y, visible);
+  }
+
+  @Mutation(() => LiveStateType)
+  @UseGuards(GqlLiveControlGuard)
+  setLiveOptions(
+    @Args("presentationId", { type: () => ID }) presentationId: string,
+    @Args("showViewerCount", { type: () => Boolean, nullable: true }) showViewerCount?: boolean | null,
+    @Args("showReactionsOnScreen", { type: () => Boolean, nullable: true }) showReactionsOnScreen?: boolean | null,
+  ) {
+    this.live.setOptions(presentationId, { showViewerCount, showReactionsOnScreen });
+    return this.live.state(presentationId, true);
   }
 }

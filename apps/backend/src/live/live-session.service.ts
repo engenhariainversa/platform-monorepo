@@ -64,6 +64,10 @@ interface SessionRuntime {
 
 export const liveTopic = (presentationId: string) => `live:${presentationId}`;
 
+/** 40 pointer updates per second, per session. */
+export const POINTER_MIN_INTERVAL_MS = 25;
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
 const NOT_LIVE: LiveStateData = {
   isLive: false,
   startedAt: null,
@@ -193,6 +197,44 @@ export class LiveSessionService {
         ? REACTION_KINDS.map((kind) => ({ kind, count: session.reactionTotals[kind] }))
         : null,
     };
+  }
+
+  /**
+   * Publishes the laser position; never touches the database. Updates above
+   * 40/s are dropped — except a change of `visible`: a dropped "hide" would
+   * leave a frozen dot on every follower's screen.
+   */
+  movePointer(presentationId: string, x: number, y: number, visible: boolean): boolean {
+    const session = this.sessions.get(presentationId);
+    const runtime = this.runtimes.get(presentationId);
+    if (!session || !runtime) return false;
+
+    const now = Date.now();
+    const visibilityChanged = (session.pointer?.visible ?? false) !== visible;
+    if (!visibilityChanged && now - runtime.lastPointerAt < POINTER_MIN_INTERVAL_MS) return false;
+
+    runtime.lastPointerAt = now;
+    session.pointer = { x: clamp01(x), y: clamp01(y), visible };
+    this.publish(presentationId, { type: "POINTER", pointer: session.pointer });
+    return true;
+  }
+
+  /** null when not live. Publishes OPTIONS only when something changed. */
+  setOptions(
+    presentationId: string,
+    options: { showViewerCount?: boolean | null; showReactionsOnScreen?: boolean | null },
+  ): LiveSession | null {
+    const session = this.sessions.get(presentationId);
+    if (!session) return null;
+    const showViewerCount = options.showViewerCount ?? session.showViewerCount;
+    const showReactionsOnScreen = options.showReactionsOnScreen ?? session.showReactionsOnScreen;
+    if (showViewerCount === session.showViewerCount && showReactionsOnScreen === session.showReactionsOnScreen) {
+      return session;
+    }
+    session.showViewerCount = showViewerCount;
+    session.showReactionsOnScreen = showReactionsOnScreen;
+    this.publish(presentationId, { type: "OPTIONS", showViewerCount, showReactionsOnScreen });
+    return session;
   }
 
   private publish(presentationId: string, event: LiveEventData): void {

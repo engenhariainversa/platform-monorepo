@@ -146,4 +146,30 @@ describe("live sessions", () => {
     expect(sub.events).toEqual([]);
     expect(JSON.stringify(sub.errors)).toContain("Apresentação privada");
   });
+
+  it("broadcasts the pointer and option changes to viewers", async () => {
+    const POINTER = `mutation ($p: ID!, $x: Float!, $y: Float!, $v: Boolean!) {
+      movePointer(presentationId: $p, x: $x, y: $y, visible: $v)
+    }`;
+    const OPTIONS = `mutation ($p: ID!) { setLiveOptions(presentationId: $p, showReactionsOnScreen: false) {
+      showViewerCount showReactionsOnScreen
+    } }`;
+    const FULL = `subscription ($slug: String!) { liveEvents(slug: $slug) {
+      type pointer { x y visible } showViewerCount showReactionsOnScreen
+    } }`;
+    const viewer = subscribeTo(socket(), FULL, { slug: deck.slug });
+    await sleep(200);
+    const presenter = socket({ authorization: `Bearer ${jwt}` });
+    await wsRequest(presenter, START, { p: deck.id, s: deck.slides[0].id });
+
+    expect((await wsRequest(presenter, POINTER, { p: deck.id, x: 0.25, y: 0.75, v: true })).data?.movePointer).toBe(true);
+    const options = await wsRequest(presenter, OPTIONS, { p: deck.id });
+    expect(options.data?.setLiveOptions).toEqual({ showViewerCount: true, showReactionsOnScreen: false });
+    expect(errorCode(await gql(app, POINTER, { p: deck.id, x: 0, y: 0, v: true }))).toBe("UNAUTHENTICATED");
+
+    await viewer.waitUntil((events) => events.some((e) => e.liveEvents.type === "OPTIONS"));
+    const byType = (type: string) => viewer.events.find((e) => e.liveEvents.type === type)?.liveEvents;
+    expect(byType("POINTER").pointer).toEqual({ x: 0.25, y: 0.75, visible: true });
+    expect(byType("OPTIONS")).toMatchObject({ showViewerCount: true, showReactionsOnScreen: false });
+  });
 });
