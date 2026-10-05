@@ -164,6 +164,7 @@ export class SocketAuthService {
       ip: session.ip,
       close: (code, reason) => socket.close(code, reason),
       presenterLinkId: user?.presenterLinkId,
+      presenterPresentationId: user?.presenterPresentationId,
       expiresAt: user?.presenterLinkExpiresAt,
     });
     if (!accepted) {
