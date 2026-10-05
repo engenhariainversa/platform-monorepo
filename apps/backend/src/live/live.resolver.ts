@@ -13,6 +13,30 @@ import type { SocketRequest } from "./socket-auth.service";
 
 type LiveContext = { req: Partial<SocketRequest> };
 
+/** Runs `cleanup` exactly once when the subscription ends (complete, error or socket close). */
+function withCleanup<T>(iterator: AsyncIterableIterator<T>, cleanup: () => void): AsyncIterableIterator<T> {
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    cleanup();
+  };
+  return {
+    next: () => iterator.next(),
+    return: async (value?: unknown) => {
+      finish();
+      return iterator.return ? iterator.return(value) : ({ value: undefined, done: true } as IteratorResult<T>);
+    },
+    throw: async (error?: unknown) => {
+      finish();
+      return iterator.throw ? iterator.throw(error) : Promise.reject(error);
+    },
+    [Symbol.asyncIterator]() {
+      return this;
+    },
+  };
+}
+
 @Resolver()
 export class LiveResolver {
   constructor(
@@ -62,7 +86,13 @@ export class LiveResolver {
     if (!deck) throw new UnauthorizedException("Apresentação privada");
     // The context object lives as long as the subscription: filter/resolve read it.
     context.req.livePresenter = await this.isPresenter(user, deck.id);
-    return this.live.events(deck.id);
+    const iterator = this.live.events(deck.id);
+    const session = context.req.socketSession;
+    // Presenters watch the same events but are not audience.
+    if (context.req.livePresenter || !session) return iterator;
+
+    this.live.addViewer(deck.id, session.viewerId, session.socketId);
+    return withCleanup(iterator, () => this.live.removeViewer(deck.id, session.viewerId, session.socketId));
   }
 
   @Mutation(() => LiveStateType)

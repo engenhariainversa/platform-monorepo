@@ -69,6 +69,8 @@ export const liveTopic = (presentationId: string) => `live:${presentationId}`;
 
 /** 40 pointer updates per second, per session. */
 export const POINTER_MIN_INTERVAL_MS = 25;
+/** VIEWERS goes out at most once every 2 s per session. */
+export const VIEWERS_MIN_INTERVAL_MS = 2000;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 const NOT_LIVE: LiveStateData = {
@@ -160,6 +162,7 @@ export class LiveSessionService {
       reactionTimer: null,
     });
     this.publish(input.presentationId, { type: "STARTED", slideId: input.slideId });
+    this.publishViewers(input.presentationId);
     return session;
   }
 
@@ -276,10 +279,71 @@ export class LiveSessionService {
     if (showViewerCount === session.showViewerCount && showReactionsOnScreen === session.showReactionsOnScreen) {
       return session;
     }
+    const counterTurnedOn = showViewerCount && !session.showViewerCount;
     session.showViewerCount = showViewerCount;
     session.showReactionsOnScreen = showReactionsOnScreen;
     this.publish(presentationId, { type: "OPTIONS", showViewerCount, showReactionsOnScreen });
+    // The audience got no VIEWERS while the counter was hidden: give it the number now.
+    if (counterTurnedOn) this.publishViewers(presentationId);
     return session;
+  }
+
+  addViewer(presentationId: string, viewerId: string, socketId: string): void {
+    let byViewer = this.watchers.get(presentationId);
+    if (!byViewer) this.watchers.set(presentationId, (byViewer = new Map()));
+    let sockets = byViewer.get(viewerId);
+    if (!sockets) byViewer.set(viewerId, (sockets = new Set()));
+    sockets.add(socketId);
+    this.viewersChanged(presentationId);
+  }
+
+  removeViewer(presentationId: string, viewerId: string, socketId: string): void {
+    const byViewer = this.watchers.get(presentationId);
+    const sockets = byViewer?.get(viewerId);
+    if (!byViewer || !sockets?.delete(socketId)) return;
+    if (sockets.size === 0) byViewer.delete(viewerId);
+    if (byViewer.size === 0) this.watchers.delete(presentationId);
+    this.viewersChanged(presentationId);
+  }
+
+  /** A socket closed: forget it everywhere (the subscription cleanup may not have run). */
+  dropSocket(socketId: string): void {
+    for (const [presentationId, byViewer] of [...this.watchers]) {
+      for (const [viewerId, sockets] of [...byViewer]) {
+        if (sockets.has(socketId)) this.removeViewer(presentationId, viewerId, socketId);
+      }
+    }
+  }
+
+  private viewersChanged(presentationId: string): void {
+    const session = this.sessions.get(presentationId);
+    const runtime = this.runtimes.get(presentationId);
+    if (!session || !runtime) return;
+    session.peakViewers = Math.max(session.peakViewers, this.viewerCount(presentationId));
+    if (runtime.viewersTimer) return; // one is already scheduled; it will carry the latest count
+
+    const wait = runtime.lastViewersAt + VIEWERS_MIN_INTERVAL_MS - Date.now();
+    if (wait <= 0) {
+      this.publishViewers(presentationId);
+      return;
+    }
+    runtime.viewersTimer = setTimeout(() => {
+      runtime.viewersTimer = null;
+      this.publishViewers(presentationId);
+    }, wait);
+  }
+
+  private publishViewers(presentationId: string): void {
+    const session = this.sessions.get(presentationId);
+    const runtime = this.runtimes.get(presentationId);
+    if (!session || !runtime) return;
+    runtime.lastViewersAt = Date.now();
+    this.publish(presentationId, {
+      type: "VIEWERS",
+      viewerCount: this.viewerCount(presentationId),
+      peakViewers: session.peakViewers,
+      audienceVisible: session.showViewerCount,
+    });
   }
 
   private publish(presentationId: string, event: LiveEventData): void {

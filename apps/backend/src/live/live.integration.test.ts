@@ -172,4 +172,32 @@ describe("live sessions", () => {
     expect(byType("POINTER").pointer).toEqual({ x: 0.25, y: 0.75, visible: true });
     expect(byType("OPTIONS")).toMatchObject({ showViewerCount: true, showReactionsOnScreen: false });
   });
+
+  it("counts viewers by viewerId and never counts presenters", async () => {
+    const PRESENTER_STATE = `query ($slug: String!) { liveState(slug: $slug) { viewerCount peakViewers } }`;
+    await gql(app, START, { p: deck.id, s: deck.slides[0].id }, jwt);
+
+    subscribeTo(socket({ viewerId: "ana" }), EVENTS, { slug: deck.slug });
+    subscribeTo(socket({ viewerId: "ana" }), EVENTS, { slug: deck.slug });
+    const bia = wsClient(url, { viewerId: "bia" });
+    subscribeTo(bia, EVENTS, { slug: deck.slug });
+    subscribeTo(socket({ authorization: `Bearer ${jwt}`, viewerId: "pedro" }), EVENTS, { slug: deck.slug });
+    await sleep(300);
+
+    expect((await gql(app, PRESENTER_STATE, { slug: deck.slug }, jwt)).data.liveState).toEqual({
+      viewerCount: 2,
+      peakViewers: 2,
+    });
+
+    await bia.dispose();
+    await sleep(300);
+    expect((await gql(app, PRESENTER_STATE, { slug: deck.slug }, jwt)).data.liveState).toEqual({
+      viewerCount: 1,
+      peakViewers: 2,
+    });
+    expect((await gql(app, PRESENTER_STATE, { slug: deck.slug })).data.liveState).toEqual({
+      viewerCount: 1,
+      peakViewers: null,
+    });
+  });
 });

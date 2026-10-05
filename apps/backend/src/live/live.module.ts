@@ -27,10 +27,13 @@ export class LiveModule implements OnModuleInit {
   constructor(
     private readonly presentations: PresentationsService,
     private readonly live: LiveSessionService,
+    private readonly registry: SocketRegistry,
   ) {}
 
   onModuleInit(): void {
     // Turning a live presentation private, or trashing it, ends the session.
     this.presentations.onUnpublished((presentationId) => this.live.stop(presentationId));
+    // Belt and braces: a socket that dies without completing its subscription.
+    this.registry.onRemove((socketId) => this.live.dropSocket(socketId));
   }
 }
