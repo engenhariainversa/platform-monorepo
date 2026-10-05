@@ -206,15 +206,15 @@ type DashboardStatsType {
 type Query {
   hello: String!
   pages: [CmsPageType!]!
+  hasAdmin: Boolean!
+  me: UserType!
+  users: [UserType!]!
+  user(id: String!): UserType
+  apiKeys: [ApiKey!]!
   roles: [RoleType!]!
   permissionsForRole(roleId: String!): [ResourcePermissions!]!
   publicResources: [PublicResourceType!]!
   availableResources: [String!]!
-  users: [UserType!]!
-  user(id: String!): UserType
-  hasAdmin: Boolean!
-  me: UserType!
-  apiKeys: [ApiKey!]!
   presentations(trash: Boolean = false): [Presentation!]!
   presentation(id: ID!): Presentation
   presentationBySlug(slug: String!): Presentation
@@ -231,19 +231,19 @@ type Query {
 
 type Mutation {
   createPage(slug: String!, title: String!, content: String!): CmsPageType!
+  login(input: LoginInput!): AuthPayload!
+  setupAdmin(input: SetupAdminInput!): AuthPayload!
+  createUser(input: CreateUserInput!): UserType!
+  updateUser(id: String!, input: UpdateUserInput!): UserType!
+  updateUserRole(id: String!, roleName: String!): UserType!
+  deleteUser(id: String!): Boolean!
+  createApiKey(name: String!, expiresIn: ApiKeyExpiry!): CreatedApiKey!
+  revokeApiKey(id: ID!): ApiKey!
   createRole(input: CreateRoleInput!): RoleType!
   updateRole(id: String!, input: UpdateRoleInput!): RoleType!
   deleteRole(id: String!): Boolean!
   togglePermission(input: TogglePermissionInput!): Boolean!
   togglePublicResource(input: TogglePublicResourceInput!): Boolean!
-  createUser(input: CreateUserInput!): UserType!
-  updateUser(id: String!, input: UpdateUserInput!): UserType!
-  updateUserRole(id: String!, roleName: String!): UserType!
-  deleteUser(id: String!): Boolean!
-  login(input: LoginInput!): AuthPayload!
-  setupAdmin(input: SetupAdminInput!): AuthPayload!
-  createApiKey(name: String!, expiresIn: ApiKeyExpiry!): CreatedApiKey!
-  revokeApiKey(id: ID!): ApiKey!
   createPresentation(input: CreatePresentationInput!): Presentation!
   updatePresentation(id: ID!, input: UpdatePresentationInput!): Presentation!
   duplicatePresentation(id: ID!): Presentation!
@@ -270,6 +270,41 @@ type Mutation {
   reorderSocialLinks(ids: [String!]!): [SocialLinkType!]!
 }
 
+input LoginInput {
+  identifier: String!
+  password: String!
+}
+
+input SetupAdminInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  username: String!
+  password: String!
+}
+
+input CreateUserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  username: String!
+  password: String!
+  roleName: String
+}
+
+input UpdateUserInput {
+  firstName: String
+  lastName: String
+  email: String
+  roleName: String
+}
+
+enum ApiKeyExpiry {
+  ONE_HOUR
+  ONE_DAY
+  SEVEN_DAYS
+}
+
 input CreateRoleInput {
   name: String!
   label: String!
@@ -289,41 +324,6 @@ input TogglePermissionInput {
 
 input TogglePublicResourceInput {
   resource: String!
-}
-
-input CreateUserInput {
-  firstName: String!
-  lastName: String!
-  email: String!
-  username: String!
-  password: String!
-  roleName: String
-}
-
-input UpdateUserInput {
-  firstName: String
-  lastName: String
-  email: String
-  roleName: String
-}
-
-input LoginInput {
-  identifier: String!
-  password: String!
-}
-
-input SetupAdminInput {
-  firstName: String!
-  lastName: String!
-  email: String!
-  username: String!
-  password: String!
-}
-
-enum ApiKeyExpiry {
-  ONE_HOUR
-  ONE_DAY
-  SEVEN_DAYS
 }
 
 input CreatePresentationInput {

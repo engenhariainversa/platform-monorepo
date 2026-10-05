@@ -33,6 +33,7 @@ services:
       - UPLOADS_DIR=/app/apps/backend/uploads
     volumes:
       - ./apps/backend/src:/app/apps/backend/src
+      - ./apps/backend/test:/app/apps/backend/test
       - ./packages/database/src:/app/packages/database/src
       - ./packages/database/prisma:/app/packages/database/prisma
       - ./packages/slides/src:/app/packages/slides/src
