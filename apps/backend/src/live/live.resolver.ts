@@ -8,7 +8,7 @@ import { badInput, notFound } from "../presentations/presentation-errors";
 import { PresentationsService } from "../presentations/presentations.service";
 import { LiveSessionService, eventFor, type LiveEventData } from "./live-session.service";
 import { GqlLiveControlGuard, GqlOptionalLiveGuard } from "./live.guards";
-import { LiveEventObject, LiveStateType } from "./live.types";
+import { LiveEventObject, LiveStateType, ReactionKindEnum } from "./live.types";
 import type { SocketRequest } from "./socket-auth.service";
 
 type LiveContext = { req: Partial<SocketRequest> };
@@ -151,5 +151,24 @@ export class LiveResolver {
   ) {
     this.live.setOptions(presentationId, { showViewerCount, showReactionsOnScreen });
     return this.live.state(presentationId, true);
+  }
+
+  /**
+   * Anonymous, and only over a socket: the rate limit is per socket, so an
+   * HTTP request (which has none) is refused with false. The deck is resolved
+   * from the database, not from the in-memory session's slug: a live deck's
+   * slug can change, and its old slug can be taken by another deck.
+   */
+  @Mutation(() => Boolean)
+  async sendReaction(
+    @Args("slug") slug: string,
+    @Args("kind", { type: () => ReactionKindEnum }) kind: ReactionKindEnum,
+    @Context() context: LiveContext,
+  ) {
+    const socket = context.req?.socketSession;
+    if (!socket) return false;
+    const deck = await this.publicDeck(slug);
+    if (!deck) return false;
+    return this.live.react(deck.id, kind, socket.socketId);
   }
 }

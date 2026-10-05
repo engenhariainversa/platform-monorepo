@@ -71,6 +71,12 @@ export const liveTopic = (presentationId: string) => `live:${presentationId}`;
 export const POINTER_MIN_INTERVAL_MS = 25;
 /** VIEWERS goes out at most once every 2 s per session. */
 export const VIEWERS_MIN_INTERVAL_MS = 2000;
+/** Per socket: one reaction per 300 ms, and at most 10 in any 5 s. */
+export const REACTION_MIN_INTERVAL_MS = 300;
+export const REACTION_BURST = 10;
+export const REACTION_BURST_WINDOW_MS = 5000;
+/** Reactions are summed and published once per window: at most 4 events/s per session. */
+export const REACTION_WINDOW_MS = 250;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 const NOT_LIVE: LiveStateData = {
@@ -118,6 +124,8 @@ export class LiveSessionService {
    * moment it starts.
    */
   private readonly watchers = new Map<string, Map<string, Map<string, number>>>();
+  /** socketId → timestamps of its accepted reactions inside the burst window. */
+  private readonly reactionLimiters = new Map<string, number[]>();
 
   get(presentationId: string): LiveSession | undefined {
     return this.sessions.get(presentationId);
@@ -305,6 +313,7 @@ export class LiveSessionService {
 
   /** A socket closed: forget it everywhere (the subscription cleanup may not have run). */
   dropSocket(socketId: string): void {
+    this.reactionLimiters.delete(socketId);
     for (const [presentationId, byViewer] of [...this.watchers]) {
       for (const [viewerId, sockets] of [...byViewer]) {
         if (sockets.has(socketId)) this.release(presentationId, viewerId, socketId, true);
@@ -363,6 +372,44 @@ export class LiveSessionService {
       peakViewers: session.peakViewers,
       audienceVisible: session.showViewerCount,
     });
+  }
+
+  /**
+   * false (not an error) when not live or throttled. The limit is per socket:
+   * `viewerId` is chosen by the client and cannot be trusted for this.
+   */
+  react(presentationId: string, kind: ReactionKind, socketId: string): boolean {
+    const session = this.sessions.get(presentationId);
+    const runtime = this.runtimes.get(presentationId);
+    if (!session || !runtime) return false;
+
+    const now = Date.now();
+    const recent = (this.reactionLimiters.get(socketId) ?? []).filter((at) => now - at < REACTION_BURST_WINDOW_MS);
+    const last = recent[recent.length - 1];
+    const throttled =
+      (last !== undefined && now - last < REACTION_MIN_INTERVAL_MS) || recent.length >= REACTION_BURST;
+    if (!throttled) recent.push(now);
+    this.reactionLimiters.set(socketId, recent);
+    if (throttled) return false;
+
+    session.reactionTotals[kind] += 1;
+    runtime.reactionWindow.set(kind, (runtime.reactionWindow.get(kind) ?? 0) + 1);
+    if (!runtime.reactionTimer) {
+      runtime.reactionTimer = setTimeout(() => this.flushReactions(presentationId), REACTION_WINDOW_MS);
+    }
+    return true;
+  }
+
+  private flushReactions(presentationId: string): void {
+    const runtime = this.runtimes.get(presentationId);
+    if (!runtime) return;
+    runtime.reactionTimer = null;
+    const reactions = REACTION_KINDS.filter((kind) => runtime.reactionWindow.has(kind)).map((kind) => ({
+      kind,
+      count: runtime.reactionWindow.get(kind) as number,
+    }));
+    runtime.reactionWindow.clear();
+    if (reactions.length > 0) this.publish(presentationId, { type: "REACTIONS", reactions });
   }
 
   private publish(presentationId: string, event: LiveEventData): void {

@@ -82,6 +82,11 @@ export function formatSocketResult(result: ExecutionResult): FormattedExecutionR
     errors: result.errors.map((error) => {
       const formatted = error.toJSON();
       const exception = error.originalError;
+      // A variable that does not coerce (e.g. an unknown enum value): Apollo answers
+      // BAD_USER_INPUT over HTTP. graphql-js reports it before execution starts (no `data`).
+      if (!("data" in result) && !formatted.extensions?.code && error.message.startsWith('Variable "$')) {
+        return { ...formatted, extensions: { ...formatted.extensions, code: "BAD_USER_INPUT" } };
+      }
       if (!(exception instanceof HttpException)) return formatted;
       const status = exception.getStatus();
       const code = HTTP_ERROR_CODES[status];

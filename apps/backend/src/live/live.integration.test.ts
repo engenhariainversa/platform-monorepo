@@ -1,7 +1,7 @@
 import { INestApplication } from "@nestjs/common";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp, createUser, errorCode, gql, jwtFor, resetDatabase } from "../../test/helpers";
-import { listen, sleep, subscribeTo, wsClient, wsRequest } from "../../test/ws";
+import { listen, openSocket, sleep, subscribeTo, wsClient, wsRequest } from "../../test/ws";
 import { LiveSessionService } from "./live-session.service";
 
 const CREATE_DECK = `mutation ($input: CreatePresentationInput!) {
@@ -204,5 +204,45 @@ describe("live sessions", () => {
       viewerCount: 5,
       peakViewers: null,
     });
+  });
+
+  it("accepts anonymous reactions over the socket only, while live", async () => {
+    const REACT = `mutation ($slug: String!, $kind: ReactionKind!) { sendReaction(slug: $slug, kind: $kind) }`;
+    const REACTIONS = `subscription ($slug: String!) { liveEvents(slug: $slug) { type reactions { kind count } } }`;
+    // Eager: a lazy client reconnects (new socket, fresh limiter) for every operation.
+    const { client: anon } = await openSocket(url, { viewerId: "ana" });
+    disposables.push(anon);
+
+    expect((await wsRequest(anon, REACT, { slug: deck.slug, kind: "FIRE" })).data?.sendReaction).toBe(false);
+
+    await gql(app, START, { p: deck.id, s: deck.slides[0].id }, jwt);
+    const watcher = subscribeTo(socket({ viewerId: "bia" }), REACTIONS, { slug: deck.slug });
+    await sleep(200);
+
+    expect((await wsRequest(anon, REACT, { slug: deck.slug, kind: "FIRE" })).data?.sendReaction).toBe(true);
+    expect((await wsRequest(anon, REACT, { slug: deck.slug, kind: "FIRE" })).data?.sendReaction).toBe(false);
+    expect((await gql(app, REACT, { slug: deck.slug, kind: "FIRE" })).data.sendReaction).toBe(false);
+    expect(errorCode(await wsRequest(anon, REACT, { slug: deck.slug, kind: "PARTY" }))).toBeDefined();
+
+    await sleep(400);
+    const event = watcher.events.find((e) => e.liveEvents.type === "REACTIONS");
+    expect(event?.liveEvents.reactions).toEqual([{ kind: "FIRE", count: 1 }]);
+  });
+
+  it("never lands a reaction on a deck that took over a live deck's old slug", async () => {
+    const REACT = `mutation ($slug: String!, $kind: ReactionKind!) { sendReaction(slug: $slug, kind: $kind) }`;
+    const oldSlug = deck.slug;
+    await gql(app, START, { p: deck.id, s: deck.slides[0].id }, jwt);
+    await gql(app, UPDATE_DECK, { id: deck.id, input: { slug: "slug-novo" } }, jwt);
+    const other = (await gql(app, CREATE_DECK, { input: { title: "Outra", slug: oldSlug, visibility: "PUBLIC", slides } }, jwt))
+      .data.createPresentation;
+    expect(other.slug).toBe(oldSlug);
+
+    const live = app.get(LiveSessionService);
+    const anon = socket({ viewerId: "ana" });
+    expect((await wsRequest(anon, REACT, { slug: oldSlug, kind: "FIRE" })).data?.sendReaction).toBe(false);
+    expect(live.state(deck.id, true).reactionTotals?.find((t) => t.kind === "FIRE")?.count).toBe(0);
+    expect((await wsRequest(anon, REACT, { slug: "slug-novo", kind: "FIRE" })).data?.sendReaction).toBe(true);
+    expect(live.state(deck.id, true).reactionTotals?.find((t) => t.kind === "FIRE")?.count).toBe(1);
   });
 });
