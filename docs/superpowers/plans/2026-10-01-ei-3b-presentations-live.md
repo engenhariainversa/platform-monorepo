@@ -78,7 +78,7 @@ Modified `prisma/schema.prisma` (`PresenterLink`); new migration `prisma/migrati
 | `packages/types/src/live.ts` | `ReactionKind`, `LiveState`, `LiveEvent`, `PresenterLink`, `LiveClientState`, `PresenterControls` |
 | `packages/graphql/src/client/ws.ts` | `toWsUrl`, `isSocketOperation`, `shouldRetrySocket`, `getViewerId`, `SOCKET_CLOSE_FORBIDDEN` |
 | `packages/graphql/src/client/presenter-token.ts` | `extractPresenterToken`, `PRESENTER_TOKEN_STORAGE_KEY` |
-| `packages/graphql/src/client/errors.ts` | `isUnauthenticatedError` |
+| `packages/graphql/src/client/errors.ts` | `isUnauthenticatedError` (added to the file EI-3a created with `graphQLErrorCode` / `graphQLErrorMessage`) |
 | `packages/graphql/src/queries/live.ts` | live + presenter link documents |
 | `packages/graphql/src/react/live-reducer.ts` | `liveReducer`, `INITIAL_LIVE_STATE` |
 | `packages/graphql/src/react/use-live-session.ts` | `useLiveSession`, `usePresenterControls`, `useSendReaction` |
@@ -5865,7 +5865,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 The link `…/apresentacoes/controle#t=eip_…` opens the same live player and presenter view as the CMS, on a machine with no CMS session. The token is read from the URL fragment, kept in `sessionStorage` (so a reload and the `P` popup work) and removed from the address bar.
 
 **Files:**
-- Create: `packages/graphql/src/client/errors.ts`; Test: `packages/graphql/src/client/errors.test.ts`; Modify: `packages/graphql/src/client/index.ts`
+- Modify: `packages/graphql/src/client/errors.ts` (already exists from EI-3a with `graphQLErrorCode` / `graphQLErrorMessage`, and `packages/graphql/src/client/index.ts` already re-exports it: only add `isUnauthenticatedError`); Test: `packages/graphql/src/client/errors.test.ts`
 - Create: `apps/landing/components/presenter-link.tsx`
 - Create: `apps/landing/app/apresentacoes/controle/layout.tsx`, `apps/landing/app/apresentacoes/controle/page.tsx`, `apps/landing/app/apresentacoes/controle/apresentador/page.tsx`
 
@@ -5896,11 +5896,11 @@ describe("isUnauthenticatedError", () => {
 ```
 
 Run: `dcr landing pnpm --filter @repo/graphql test`
-Expected: FAIL — cannot resolve `./errors`.
+Expected: FAIL — `isUnauthenticatedError` is not exported by `./errors` yet.
 
 - [ ] **Step 2: Implement it**
 
-`packages/graphql/src/client/errors.ts`:
+Append to the existing `packages/graphql/src/client/errors.ts` (keep `graphQLErrorCode` and `graphQLErrorMessage` unchanged):
 ```ts
 type GraphQLErrorLike = { extensions?: { code?: unknown } };
 
@@ -5916,7 +5916,7 @@ export function isUnauthenticatedError(error: unknown): boolean {
   return list.some((e: GraphQLErrorLike) => e?.extensions?.code === "UNAUTHENTICATED");
 }
 ```
-`packages/graphql/src/client/index.ts`: add `export * from "./errors";`
+`packages/graphql/src/client/index.ts` already has `export * from "./errors";` (EI-3a); no change.
 
 Run: `dcr landing pnpm --filter @repo/graphql test`
 Expected: PASS.
