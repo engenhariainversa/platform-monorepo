@@ -56,6 +56,9 @@ export interface LiveStateData {
 /** Throttling state of one session (used by Tasks 4–6). */
 interface SessionRuntime {
   lastPointerAt: number;
+  /** Latest throttled update waiting for the window to end (trailing delivery). */
+  pendingPointer: LivePointerData | null;
+  pointerTimer: NodeJS.Timeout | null;
   lastViewersAt: number;
   viewersTimer: NodeJS.Timeout | null;
   reactionWindow: Map<ReactionKind, number>;
@@ -149,6 +152,8 @@ export class LiveSessionService {
     this.sessions.set(input.presentationId, session);
     this.runtimes.set(input.presentationId, {
       lastPointerAt: 0,
+      pendingPointer: null,
+      pointerTimer: null,
       lastViewersAt: 0,
       viewersTimer: null,
       reactionWindow: new Map(),
@@ -161,6 +166,7 @@ export class LiveSessionService {
   stop(presentationId: string): boolean {
     if (!this.sessions.delete(presentationId)) return false;
     const runtime = this.runtimes.get(presentationId);
+    if (runtime?.pointerTimer) clearTimeout(runtime.pointerTimer);
     if (runtime?.viewersTimer) clearTimeout(runtime.viewersTimer);
     if (runtime?.reactionTimer) clearTimeout(runtime.reactionTimer);
     this.runtimes.delete(presentationId);
@@ -200,23 +206,62 @@ export class LiveSessionService {
   }
 
   /**
-   * Publishes the laser position; never touches the database. Updates above
-   * 40/s are dropped — except a change of `visible`: a dropped "hide" would
-   * leave a frozen dot on every follower's screen.
+   * Publishes the laser position; never touches the database. At most one
+   * publish per POINTER_MIN_INTERVAL_MS (40/s). Inside the window a position-only
+   * update is dropped, but a change of `visible` is deferred and delivered when
+   * the window ends (latest pending state wins): a lost "hide" would leave a
+   * frozen dot on every follower's screen, and bypassing the window would make
+   * the rate unbounded. Returns true only when published immediately.
    */
   movePointer(presentationId: string, x: number, y: number, visible: boolean): boolean {
     const session = this.sessions.get(presentationId);
     const runtime = this.runtimes.get(presentationId);
     if (!session || !runtime) return false;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
 
+    const pointer = { x: clamp01(x), y: clamp01(y), visible };
     const now = Date.now();
-    const visibilityChanged = (session.pointer?.visible ?? false) !== visible;
-    if (!visibilityChanged && now - runtime.lastPointerAt < POINTER_MIN_INTERVAL_MS) return false;
+    const elapsed = now - runtime.lastPointerAt;
 
+    if (elapsed >= POINTER_MIN_INTERVAL_MS) {
+      this.clearPendingPointer(runtime);
+      this.emitPointer(presentationId, session, runtime, pointer, now);
+      return true;
+    }
+
+    const lastVisible = runtime.pendingPointer?.visible ?? session.pointer?.visible ?? false;
+    if (!runtime.pendingPointer && lastVisible === visible) return false;
+
+    runtime.pendingPointer = pointer;
+    if (!runtime.pointerTimer) {
+      runtime.pointerTimer = setTimeout(() => {
+        runtime.pointerTimer = null;
+        const pending = runtime.pendingPointer;
+        runtime.pendingPointer = null;
+        if (pending && this.runtimes.get(presentationId) === runtime) {
+          this.emitPointer(presentationId, session, runtime, pending, Date.now());
+        }
+      }, POINTER_MIN_INTERVAL_MS - elapsed);
+    }
+    return false;
+  }
+
+  private clearPendingPointer(runtime: SessionRuntime): void {
+    if (runtime.pointerTimer) clearTimeout(runtime.pointerTimer);
+    runtime.pointerTimer = null;
+    runtime.pendingPointer = null;
+  }
+
+  private emitPointer(
+    presentationId: string,
+    session: LiveSession,
+    runtime: SessionRuntime,
+    pointer: LivePointerData,
+    now: number,
+  ): void {
     runtime.lastPointerAt = now;
-    session.pointer = { x: clamp01(x), y: clamp01(y), visible };
-    this.publish(presentationId, { type: "POINTER", pointer: session.pointer });
-    return true;
+    session.pointer = pointer;
+    this.publish(presentationId, { type: "POINTER", pointer });
   }
 
   /** null when not live. Publishes OPTIONS only when something changed. */

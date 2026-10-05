@@ -41,14 +41,47 @@ describe("LiveSessionService — pointer and options", () => {
     expect(events).toHaveLength(40);
   });
 
-  it("always delivers a visibility change, even inside the throttle window", () => {
+  it("always delivers a visibility change, deferred to the end of the throttle window", () => {
     service.movePointer("deck-1", 0.4, 0.4, true);
+    events.length = 0;
     vi.advanceTimersByTime(3);
     expect(service.movePointer("deck-1", 0.41, 0.4, true)).toBe(false);
-    expect(service.movePointer("deck-1", 0.41, 0.4, false)).toBe(true);
-    expect(events.at(-1)).toEqual({ type: "POINTER", pointer: { x: 0.41, y: 0.4, visible: false } });
+    expect(service.movePointer("deck-1", 0.41, 0.4, false)).toBe(false);
+    expect(events).toEqual([]);
+    vi.advanceTimersByTime(21);
+    expect(events).toEqual([]);
     vi.advanceTimersByTime(1);
+    expect(events).toEqual([{ type: "POINTER", pointer: { x: 0.41, y: 0.4, visible: false } }]);
+    vi.advanceTimersByTime(25);
     expect(service.movePointer("deck-1", 0.5, 0.5, true)).toBe(true);
+  });
+
+  it("cannot exceed 40 per second by alternating visibility, and the last state wins", () => {
+    let last = true;
+    for (let ms = 0; ms < 1000; ms += 1) {
+      last = ms % 2 === 0;
+      service.movePointer("deck-1", ms / 1000, 0.5, last);
+      vi.advanceTimersByTime(1);
+    }
+    vi.advanceTimersByTime(30);
+    expect(events.length).toBeLessThanOrEqual(41);
+    expect(events.at(-1)).toEqual({ type: "POINTER", pointer: { x: 0.999, y: 0.5, visible: false } });
+    expect(service.get("deck-1")?.pointer?.visible).toBe(last);
+  });
+
+  it("ignores non-finite coordinates", () => {
+    expect(service.movePointer("deck-1", Number.NaN, 0.5, true)).toBe(false);
+    expect(events).toEqual([]);
+  });
+
+  it("stop() cancels a pending pointer update", () => {
+    service.movePointer("deck-1", 0.4, 0.4, true);
+    vi.advanceTimersByTime(3);
+    service.movePointer("deck-1", 0.4, 0.4, false);
+    service.stop("deck-1");
+    events.length = 0;
+    vi.advanceTimersByTime(100);
+    expect(events).toEqual([]);
   });
 
   it("changes options and announces both flags", () => {
