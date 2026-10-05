@@ -38,6 +38,7 @@ model User {
   role      Role     @relation(fields: [roleId], references: [id])
   presentations Presentation[]
   apiKeys       ApiKey[]
+  presenterLinks PresenterLink[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -219,6 +220,7 @@ model Presentation {
   createdAt   DateTime               @default(now()) @map("created_at")
   updatedAt   DateTime               @updatedAt @map("updated_at")
   slides      Slide[]
+  presenterLinks PresenterLink[]
 
   @@map("presentations")
 }
@@ -258,4 +260,26 @@ model ApiKey {
   createdAt   DateTime  @default(now()) @map("created_at")
 
   @@map("api_keys")
+}
+
+// Temporary bearer token ("eip_…") that lets its holder present ONE presentation
+// from a machine without a CMS session: read it in full and run the live
+// controls. Only the SHA-256 of the token is stored.
+model PresenterLink {
+  id             String       @id @default(uuid())
+  presentationId String       @map("presentation_id")
+  presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  name           String
+  // First 8 characters after "eip_", shown in the CMS list.
+  prefix         String
+  hash           String       @unique
+  createdById    String       @map("created_by_id")
+  // Cascade like ApiKey: deleting a user who only minted links must work.
+  createdBy      User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  expiresAt      DateTime     @map("expires_at")
+  lastUsedAt     DateTime?    @map("last_used_at")
+  revokedAt      DateTime?    @map("revoked_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("presenter_links")
 }

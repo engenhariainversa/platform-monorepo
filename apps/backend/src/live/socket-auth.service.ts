@@ -8,6 +8,7 @@ import type { WebSocket } from "ws";
 import { ApiKeysService } from "../api-keys/api-keys.service";
 import type { AuthenticatedUser } from "../auth/auth-kind";
 import { AuthService } from "../auth/auth.service";
+import { PresenterLinksService } from "../presenter-links/presenter-links.service";
 import { CLOSE_TOO_MANY, SocketRegistry } from "./socket-registry";
 
 /** What the server knows about one acknowledged socket. */
@@ -109,6 +110,7 @@ export class SocketAuthService {
     private readonly jwt: JwtService,
     private readonly auth: AuthService,
     private readonly apiKeys: ApiKeysService,
+    private readonly presenterLinks: PresenterLinksService,
   ) {}
 
   /** Same credentials as the HTTP strategies. null = anonymous viewer. */
@@ -116,6 +118,7 @@ export class SocketAuthService {
     if (!authorization) return null;
     const token = /^Bearer\s+(\S+)$/i.exec(authorization)?.[1];
     if (!token) throw new UnauthorizedException("Credencial inválida");
+    if (token.startsWith("eip_")) return this.presenterLinks.authenticate(token);
     if (token.startsWith("ei_")) return this.apiKeys.authenticate(token);
 
     let payload: { sub: string };
@@ -137,8 +140,9 @@ export class SocketAuthService {
     const params = ctx.connectionParams ?? {};
     const authorization =
       typeof params.authorization === "string" && params.authorization ? params.authorization : null;
+    let user: AuthenticatedUser | null;
     try {
-      await this.authenticate(authorization);
+      user = await this.authenticate(authorization);
     } catch {
       return false;
     }
@@ -154,6 +158,8 @@ export class SocketAuthService {
       socketId,
       ip: session.ip,
       close: (code, reason) => socket.close(code, reason),
+      presenterLinkId: user?.presenterLinkId,
+      expiresAt: user?.presenterLinkExpiresAt,
     });
     if (!accepted) {
       socket.close(CLOSE_TOO_MANY, "Too many connections");

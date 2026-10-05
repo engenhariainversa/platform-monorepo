@@ -8,6 +8,7 @@ import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
 import { ApiKeysModule } from "./api-keys/api-keys.module";
 import { PresentationsModule } from "./presentations/presentations.module";
+import { PresenterLinksModule } from "./presenter-links/presenter-links.module";
 import { ContentModule } from "./content/content.module";
 import { UploadModule } from "./upload/upload.module";
 import { RolesModule } from "./roles/roles.module";
@@ -54,6 +55,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
     AuthModule,
     ApiKeysModule,
     PresentationsModule,
+    PresenterLinksModule,
     LiveModule,
     ContentModule,
     UploadModule,

@@ -107,6 +107,27 @@ type SlideTemplateInfo {
   example: JSON!
 }
 
+type PresenterLink {
+  id: ID!
+  name: String!
+
+  """First 8 characters after eip_, for identification"""
+  prefix: String!
+  expiresAt: DateTime!
+  lastUsedAt: DateTime
+  revokedAt: DateTime
+  createdAt: DateTime!
+}
+
+type CreatedPresenterLink {
+  presenterLink: PresenterLink!
+
+  """
+  The presenter page URL with the token in the fragment. Returned only here.
+  """
+  url: String!
+}
+
 type LiveType {
   id: ID!
   label: String!
@@ -211,14 +232,16 @@ type Query {
   users: [UserType!]!
   user(id: String!): UserType
   apiKeys: [ApiKey!]!
-  roles: [RoleType!]!
-  permissionsForRole(roleId: String!): [ResourcePermissions!]!
-  publicResources: [PublicResourceType!]!
-  availableResources: [String!]!
+  presenterLinks(presentationId: ID!): [PresenterLink!]!
+  presentationForPresenter: Presentation!
   presentations(trash: Boolean = false): [Presentation!]!
   presentation(id: ID!): Presentation
   presentationBySlug(slug: String!): Presentation
   slideTemplates: [SlideTemplateInfo!]!
+  roles: [RoleType!]!
+  permissionsForRole(roleId: String!): [ResourcePermissions!]!
+  publicResources: [PublicResourceType!]!
+  availableResources: [String!]!
   live: LiveType
   episodes: [EpisodeType!]!
   heroSection: HeroSectionType
@@ -239,11 +262,8 @@ type Mutation {
   deleteUser(id: String!): Boolean!
   createApiKey(name: String!, expiresIn: ApiKeyExpiry!): CreatedApiKey!
   revokeApiKey(id: ID!): ApiKey!
-  createRole(input: CreateRoleInput!): RoleType!
-  updateRole(id: String!, input: UpdateRoleInput!): RoleType!
-  deleteRole(id: String!): Boolean!
-  togglePermission(input: TogglePermissionInput!): Boolean!
-  togglePublicResource(input: TogglePublicResourceInput!): Boolean!
+  createPresenterLink(presentationId: ID!, name: String!, expiresIn: PresenterLinkExpiry!): CreatedPresenterLink!
+  revokePresenterLink(id: ID!): PresenterLink!
   createPresentation(input: CreatePresentationInput!): Presentation!
   updatePresentation(id: ID!, input: UpdatePresentationInput!): Presentation!
   duplicatePresentation(id: ID!): Presentation!
@@ -255,6 +275,11 @@ type Mutation {
   updateSlide(id: ID!, input: UpdateSlideInput!): Slide!
   deleteSlide(id: ID!): Boolean!
   reorderSlides(presentationId: ID!, ids: [ID!]!): [Slide!]!
+  createRole(input: CreateRoleInput!): RoleType!
+  updateRole(id: String!, input: UpdateRoleInput!): RoleType!
+  deleteRole(id: String!): Boolean!
+  togglePermission(input: TogglePermissionInput!): Boolean!
+  togglePublicResource(input: TogglePublicResourceInput!): Boolean!
   upsertLive(input: UpsertLiveInput!): LiveType!
   createEpisode(input: CreateEpisodeInput!): EpisodeType!
   updateEpisode(id: String!, input: UpdateEpisodeInput!): EpisodeType!
@@ -305,25 +330,11 @@ enum ApiKeyExpiry {
   SEVEN_DAYS
 }
 
-input CreateRoleInput {
-  name: String!
-  label: String!
-  description: String
-}
-
-input UpdateRoleInput {
-  label: String
-  description: String
-}
-
-input TogglePermissionInput {
-  roleId: String!
-  resource: String!
-  action: String!
-}
-
-input TogglePublicResourceInput {
-  resource: String!
+enum PresenterLinkExpiry {
+  TWO_HOURS
+  TWELVE_HOURS
+  ONE_DAY
+  SEVEN_DAYS
 }
 
 input CreatePresentationInput {
@@ -353,6 +364,27 @@ input UpdateSlideInput {
   content: JSON
   notes: String
   hidden: Boolean
+}
+
+input CreateRoleInput {
+  name: String!
+  label: String!
+  description: String
+}
+
+input UpdateRoleInput {
+  label: String
+  description: String
+}
+
+input TogglePermissionInput {
+  roleId: String!
+  resource: String!
+  action: String!
+}
+
+input TogglePublicResourceInput {
+  resource: String!
 }
 
 input UpsertLiveInput {

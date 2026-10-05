@@ -27,6 +27,13 @@ describe("PresentationsService", () => {
   });
 
   describe("create", () => {
+    it("keeps the presenter link route's slug reserved", async () => {
+      expect(await codeOf(() => service.create({ title: "X", slug: "controle" }, userId))).toBe("INVALID_SLUG");
+      const generated = await service.create({ title: "Controle" }, userId);
+      expect(generated.slug).toBe("controle-2");
+      expect(await codeOf(() => service.update(generated.id, { slug: "controle" }))).toBe("INVALID_SLUG");
+    });
+
     it("generates a slug, defaults to PRIVATE and stores validated, ordered slides", async () => {
       const p = await service.create({ title: "Introdução à Engenharia", slides: [cover, bullets] }, userId);
       expect(p.slug).toBe("introducao-a-engenharia");

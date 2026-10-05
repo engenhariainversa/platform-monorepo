@@ -31,6 +31,8 @@ services:
       - JWT_SECRET=ei-dev-secret-change-in-production-2024
       # Must match the volume mount below (see docker-compose.yml).
       - UPLOADS_DIR=/app/apps/backend/uploads
+      # Where presenter link URLs point (the landing serves /apresentacoes/controle).
+      - LANDING_URL=http://localhost:4052
     volumes:
       - ./apps/backend/src:/app/apps/backend/src
       - ./apps/backend/test:/app/apps/backend/test

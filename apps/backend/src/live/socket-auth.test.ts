@@ -65,7 +65,7 @@ describe("SocketAuthService.onConnect", () => {
         return { id: "user-1" };
       },
     };
-    const service = new SocketAuthService(registry, {} as never, {} as never, apiKeys as never);
+    const service = new SocketAuthService(registry, {} as never, {} as never, apiKeys as never, {} as never);
     const ctx = {
       connectionParams: { authorization: "Bearer ei_key" },
       extra: { socket, request: { headers: {}, socket: { remoteAddress: "1.1.1.1" } } },
