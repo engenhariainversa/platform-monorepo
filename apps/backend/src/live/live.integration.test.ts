@@ -113,6 +113,17 @@ describe("live sessions", () => {
     expect(app.get(LiveSessionService).get(deck.id)).toBeUndefined();
   });
 
+  it("refuses to follow a slide from another presentation", async () => {
+    const other = (await gql(app, CREATE_DECK, { input: { title: "Outra", visibility: "PUBLIC", slides } }, jwt)).data
+      .createPresentation;
+    await gql(app, START, { p: deck.id, s: deck.slides[0].id }, jwt);
+    expect(errorCode(await gql(app, SLIDE, { p: deck.id, s: other.slides[1].id }, jwt))).toBe("BAD_USER_INPUT");
+    expect(errorCode(await gql(app, SLIDE, { p: deck.id, s: "x".repeat(500) }, jwt))).toBe("BAD_USER_INPUT");
+    expect(app.get(LiveSessionService).get(deck.id)?.slideId).toBe(deck.slides[0].id);
+    expect((await gql(app, SLIDE, { p: deck.id, s: deck.slides[1].id }, jwt)).data.setLiveSlide).toBe(true);
+    expect(app.get(LiveSessionService).get(deck.id)?.slideId).toBe(deck.slides[1].id);
+  });
+
   it("ends the session when the presentation turns private or is trashed", async () => {
     const viewer = subscribeTo(socket(), EVENTS, { slug: deck.slug });
     await sleep(200);

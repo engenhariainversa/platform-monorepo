@@ -91,10 +91,13 @@ export class LiveResolver {
   /** false when there is no session: the presenter's player then re-sends startLive. */
   @Mutation(() => Boolean)
   @UseGuards(GqlLiveControlGuard)
-  setLiveSlide(
+  async setLiveSlide(
     @Args("presentationId", { type: () => ID }) presentationId: string,
     @Args("slideId", { type: () => ID }) slideId: string,
   ) {
+    // Looked up fresh: a slide added after startLive is followable too.
+    const slide = await prisma.slide.findFirst({ where: { id: slideId, presentationId }, select: { id: true } });
+    if (!slide) throw badInput("O slide não pertence a esta apresentação");
     return this.live.setSlide(presentationId, slideId);
   }
 }

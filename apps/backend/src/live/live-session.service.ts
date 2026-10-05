@@ -180,7 +180,7 @@ export class LiveSessionService {
 
   state(presentationId: string, presenter: boolean): LiveStateData {
     const session = this.sessions.get(presentationId);
-    if (!session) return NOT_LIVE;
+    if (!session) return { ...NOT_LIVE };
     return {
       isLive: true,
       startedAt: session.startedAt,
