@@ -182,21 +182,26 @@ describe("live sessions", () => {
     const bia = wsClient(url, { viewerId: "bia" });
     subscribeTo(bia, EVENTS, { slug: deck.slug });
     subscribeTo(socket({ authorization: `Bearer ${jwt}`, viewerId: "pedro" }), EVENTS, { slug: deck.slug });
+    // No viewerId, or one too long to keep: each socket counts as its own viewer.
+    subscribeTo(socket(), EVENTS, { slug: deck.slug });
+    subscribeTo(socket(), EVENTS, { slug: deck.slug });
+    subscribeTo(socket({ viewerId: "x".repeat(10_000) }), EVENTS, { slug: deck.slug });
+    subscribeTo(socket({ viewerId: "x".repeat(10_000) }), EVENTS, { slug: deck.slug });
     await sleep(300);
 
     expect((await gql(app, PRESENTER_STATE, { slug: deck.slug }, jwt)).data.liveState).toEqual({
-      viewerCount: 2,
-      peakViewers: 2,
+      viewerCount: 6,
+      peakViewers: 6,
     });
 
     await bia.dispose();
     await sleep(300);
     expect((await gql(app, PRESENTER_STATE, { slug: deck.slug }, jwt)).data.liveState).toEqual({
-      viewerCount: 1,
-      peakViewers: 2,
+      viewerCount: 5,
+      peakViewers: 6,
     });
     expect((await gql(app, PRESENTER_STATE, { slug: deck.slug })).data.liveState).toEqual({
-      viewerCount: 1,
+      viewerCount: 5,
       peakViewers: null,
     });
   });

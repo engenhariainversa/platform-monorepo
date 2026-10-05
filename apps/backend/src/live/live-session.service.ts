@@ -113,11 +113,11 @@ export class LiveSessionService {
   private readonly sessions = new Map<string, LiveSession>();
   private readonly runtimes = new Map<string, SessionRuntime>();
   /**
-   * presentationId → viewerId → socketIds. Kept outside the session on
+   * presentationId → viewerId → socketId → open subscriptions. Kept outside the session on
    * purpose: viewers subscribe before a session exists and must be counted the
    * moment it starts.
    */
-  private readonly watchers = new Map<string, Map<string, Set<string>>>();
+  private readonly watchers = new Map<string, Map<string, Map<string, number>>>();
 
   get(presentationId: string): LiveSession | undefined {
     return this.sessions.get(presentationId);
@@ -284,7 +284,8 @@ export class LiveSessionService {
     session.showReactionsOnScreen = showReactionsOnScreen;
     this.publish(presentationId, { type: "OPTIONS", showViewerCount, showReactionsOnScreen });
     // The audience got no VIEWERS while the counter was hidden: give it the number now.
-    if (counterTurnedOn) this.publishViewers(presentationId);
+    // Through the same 2 s gate as every other VIEWERS.
+    if (counterTurnedOn) this.scheduleViewers(presentationId);
     return session;
   }
 
@@ -292,34 +293,52 @@ export class LiveSessionService {
     let byViewer = this.watchers.get(presentationId);
     if (!byViewer) this.watchers.set(presentationId, (byViewer = new Map()));
     let sockets = byViewer.get(viewerId);
-    if (!sockets) byViewer.set(viewerId, (sockets = new Set()));
-    sockets.add(socketId);
+    if (!sockets) byViewer.set(viewerId, (sockets = new Map()));
+    // A socket may hold several subscriptions to one deck: count them.
+    sockets.set(socketId, (sockets.get(socketId) ?? 0) + 1);
     this.viewersChanged(presentationId);
   }
 
   removeViewer(presentationId: string, viewerId: string, socketId: string): void {
-    const byViewer = this.watchers.get(presentationId);
-    const sockets = byViewer?.get(viewerId);
-    if (!byViewer || !sockets?.delete(socketId)) return;
-    if (sockets.size === 0) byViewer.delete(viewerId);
-    if (byViewer.size === 0) this.watchers.delete(presentationId);
-    this.viewersChanged(presentationId);
+    this.release(presentationId, viewerId, socketId, false);
   }
 
   /** A socket closed: forget it everywhere (the subscription cleanup may not have run). */
   dropSocket(socketId: string): void {
     for (const [presentationId, byViewer] of [...this.watchers]) {
       for (const [viewerId, sockets] of [...byViewer]) {
-        if (sockets.has(socketId)) this.removeViewer(presentationId, viewerId, socketId);
+        if (sockets.has(socketId)) this.release(presentationId, viewerId, socketId, true);
       }
     }
   }
 
+  /** Ends one subscription of the socket, or all of them (`all`). */
+  private release(presentationId: string, viewerId: string, socketId: string, all: boolean): void {
+    const byViewer = this.watchers.get(presentationId);
+    const sockets = byViewer?.get(viewerId);
+    const open = sockets?.get(socketId);
+    if (!byViewer || !sockets || open === undefined) return;
+    if (!all && open > 1) {
+      sockets.set(socketId, open - 1);
+      return; // the socket still watches: the count did not change
+    }
+    sockets.delete(socketId);
+    if (sockets.size === 0) byViewer.delete(viewerId);
+    if (byViewer.size === 0) this.watchers.delete(presentationId);
+    this.viewersChanged(presentationId);
+  }
+
   private viewersChanged(presentationId: string): void {
     const session = this.sessions.get(presentationId);
-    const runtime = this.runtimes.get(presentationId);
-    if (!session || !runtime) return;
+    if (!session) return;
     session.peakViewers = Math.max(session.peakViewers, this.viewerCount(presentationId));
+    this.scheduleViewers(presentationId);
+  }
+
+  /** Publishes VIEWERS now if the 2 s window allows, else once when it ends (with the latest count). */
+  private scheduleViewers(presentationId: string): void {
+    const runtime = this.runtimes.get(presentationId);
+    if (!this.sessions.has(presentationId) || !runtime) return;
     if (runtime.viewersTimer) return; // one is already scheduled; it will carry the latest count
 
     const wait = runtime.lastViewersAt + VIEWERS_MIN_INTERVAL_MS - Date.now();

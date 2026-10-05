@@ -98,7 +98,46 @@ describe("LiveSessionService — viewers", () => {
     expect(service.state("deck-1", true).viewerCount).toBe(2);
 
     service.setOptions("deck-1", { showViewerCount: true });
+    // The re-announce goes through the 2 s window like any other VIEWERS.
+    vi.advanceTimersByTime(2000);
     expect(viewers().at(-1)).toMatchObject({ viewerCount: 2, audienceVisible: true });
+  });
+
+  it("keeps re-announces within the 2 s limit when the counter is toggled quickly", () => {
+    const times: number[] = [];
+    (service as any).pubSub.publish.mockImplementation(async (_topic: unknown, event: unknown) => {
+      events.push(event as LiveEventData);
+      if ((event as LiveEventData).type === "VIEWERS") times.push(Date.now());
+    });
+    service.start(DECK);
+    vi.advanceTimersByTime(2000);
+    service.addViewer("deck-1", "ana", "s1");
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(100);
+      service.setOptions("deck-1", { showViewerCount: false });
+      service.setOptions("deck-1", { showViewerCount: true });
+    }
+    service.addViewer("deck-1", "bia", "s2");
+    vi.advanceTimersByTime(10_000);
+
+    for (let i = 1; i < times.length; i++) expect(times[i] - times[i - 1]).toBeGreaterThanOrEqual(2000);
+    expect(times.length).toBeLessThanOrEqual(3);
+    expect(viewers().at(-1)).toMatchObject({ viewerCount: 2, peakViewers: 2, audienceVisible: true });
+  });
+
+  it("keeps a socket counted while another of its subscriptions to the deck is open", () => {
+    service.start(DECK);
+    service.addViewer("deck-1", "ana", "socket-1");
+    service.addViewer("deck-1", "ana", "socket-1");
+    service.removeViewer("deck-1", "ana", "socket-1");
+    expect(service.viewerCount("deck-1")).toBe(1);
+    service.removeViewer("deck-1", "ana", "socket-1");
+    expect(service.viewerCount("deck-1")).toBe(0);
+
+    service.addViewer("deck-1", "bia", "socket-2");
+    service.addViewer("deck-1", "bia", "socket-2");
+    service.dropSocket("socket-2");
+    expect(service.viewerCount("deck-1")).toBe(0);
   });
 
   it("stops the pending VIEWERS timer when the session ends", () => {
