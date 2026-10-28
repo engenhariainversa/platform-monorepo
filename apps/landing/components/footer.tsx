@@ -136,6 +136,9 @@ export function Footer() {
             © {new Date().getFullYear()} Engenharia Inversa - Build in Public.
             Todos os direitos reservados.
           </p>
+          <p className="font-code text-code-sm text-on-surface-variant opacity-60 mt-xs">
+            8020 Digital Ltda · CNPJ 32.285.763/0001-12
+          </p>
         </div>
       </div>
     </footer>
