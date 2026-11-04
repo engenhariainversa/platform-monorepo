@@ -1,6 +1,14 @@
 import { gql } from "@apollo/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getViewerId, isSocketOperation, shouldRetrySocket, toWsUrl } from "./ws";
+import {
+  SOCKET_RETRY_JITTER_MS,
+  SOCKET_RETRY_MAX_MS,
+  getViewerId,
+  isSocketOperation,
+  retryDelayMs,
+  shouldRetrySocket,
+  toWsUrl,
+} from "./ws";
 
 describe("toWsUrl", () => {
   it("derives the websocket URL from the HTTP endpoint", () => {
@@ -64,5 +72,21 @@ describe("getViewerId", () => {
       },
     });
     expect(getViewerId()).toBe(getViewerId());
+  });
+});
+
+describe("retryDelayMs", () => {
+  const none = () => 0;
+  it("doubles from 1 s and is capped at 30 s", () => {
+    expect(retryDelayMs(0, none)).toBe(1000);
+    expect(retryDelayMs(1, none)).toBe(2000);
+    expect(retryDelayMs(4, none)).toBe(16000);
+    expect(retryDelayMs(5, none)).toBe(SOCKET_RETRY_MAX_MS);
+    expect(retryDelayMs(50, none)).toBe(SOCKET_RETRY_MAX_MS);
+    expect(retryDelayMs(Infinity, none)).toBe(SOCKET_RETRY_MAX_MS);
+  });
+  it("adds jitter bounded by SOCKET_RETRY_JITTER_MS", () => {
+    expect(retryDelayMs(0, () => 0.5)).toBe(1500);
+    expect(retryDelayMs(50, () => 0.999)).toBeLessThan(SOCKET_RETRY_MAX_MS + SOCKET_RETRY_JITTER_MS);
   });
 });

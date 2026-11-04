@@ -3,7 +3,7 @@ import { setContext } from "@apollo/client/link/context";
 import { removeTypenameFromVariables } from "@apollo/client/link/remove-typename";
 import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
 import { createClient } from "graphql-ws";
-import { getViewerId, isSocketOperation, shouldRetrySocket, toWsUrl } from "./ws";
+import { getViewerId, isSocketOperation, retryDelayMs, shouldRetrySocket, toWsUrl } from "./ws";
 
 /** Next.js augments fetch options with a `next` field for caching/revalidation. */
 type FetchOptions = RequestInit & {
@@ -72,6 +72,10 @@ export function createApolloClient(
         // Client ping every 30 s, below Cloudflare's ~100 s idle timeout.
         keepAlive: 30_000,
         retryAttempts: Infinity,
+        // graphql-ws' default wait is 2^retries seconds with no ceiling.
+        retryWait: async (retries) => {
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs(retries)));
+        },
         shouldRetry: shouldRetrySocket,
         connectionParams: () => {
           const token = options.getToken?.();

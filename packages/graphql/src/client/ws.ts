@@ -9,6 +9,18 @@ export const SOCKET_OPERATIONS = ["MovePointer", "SendReaction"];
 /** The server closed the socket for good: revoked/expired credential or foreign origin. */
 export const SOCKET_CLOSE_FORBIDDEN = 4403;
 
+/** The server refused the socket: too many concurrent sockets from one IP. Not retried. */
+export const SOCKET_CLOSE_TOO_MANY = 4429;
+
+/** Ceiling of the reconnect wait, and the random extra on top of it. */
+export const SOCKET_RETRY_MAX_MS = 30_000;
+export const SOCKET_RETRY_JITTER_MS = 1_000;
+
+/** Reconnect wait: 1 s, 2 s, 4 s … capped at 30 s, plus up to 1 s of jitter. */
+export function retryDelayMs(retries: number, random: () => number = Math.random): number {
+  return Math.min(2 ** retries * 1000, SOCKET_RETRY_MAX_MS) + random() * SOCKET_RETRY_JITTER_MS;
+}
+
 const VIEWER_ID_KEY = "ei_viewer_id";
 let memoryViewerId: string | null = null;
 
