@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { SlideRenderer, type SlideContext } from "./slide-renderer";
 import { PIPELINE_GRADIENT } from "./canvas";
 import { visibleSlides, type PlayerSlide } from "./navigation";
+import { followTargetIndex } from "./live/follow";
 import { isIgnoredKeyEvent, navActionForKey, useDeckNavigation } from "./use-deck-navigation";
 
 export type PresentationPlayerProps = {
@@ -15,6 +16,13 @@ export type PresentationPlayerProps = {
   onSlideChange?: (index: number, slide: PlayerSlide) => void;
   overlay?: ReactNode;
   toolbar?: ReactNode;
+  /**
+   * Jump to this slide whenever the value changes (live follow). A slide id the
+   * deck does not have is ignored: the viewer stays where they are.
+   */
+  followSlideId?: string | null;
+  /** Persistent UI over the player (badges, buttons). Outside the click-to-navigate stage. */
+  chrome?: ReactNode;
 };
 
 const SWIPE_THRESHOLD = 50;
@@ -27,6 +35,8 @@ export function PresentationPlayer({
   onSlideChange,
   overlay,
   toolbar,
+  followSlideId,
+  chrome,
 }: PresentationPlayerProps) {
   const shown = useMemo(() => visibleSlides(slides), [slides]);
   const { index, count, dispatch } = useDeckNavigation(presentationId, shown.length);
@@ -42,6 +52,21 @@ export function PresentationPlayer({
   useEffect(() => {
     if (current) onSlideChangeRef.current?.(index, current);
   }, [index, current]);
+
+  // Pull the viewer only when `followSlideId` changes. `shown` is a dependency
+  // so that a refreshed deck that now contains the followed slide jumps then,
+  // but an already-handled id is not re-applied on later deck changes.
+  const handledFollowId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (followSlideId === handledFollowId.current) return;
+    const target = followTargetIndex(shown.map((slide) => slide.id), followSlideId);
+    if (target !== null) {
+      handledFollowId.current = followSlideId;
+      dispatch({ type: "goto", index: target });
+    } else if (!followSlideId) {
+      handledFollowId.current = followSlideId;
+    }
+  }, [followSlideId, shown, dispatch]);
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen();
@@ -131,6 +156,8 @@ export function PresentationPlayer({
           Tela cheia
         </button>
       </div>
+
+      {chrome}
 
       {/* Progress */}
       <div className="absolute bottom-0 left-0 h-[3px] transition-[width] duration-300" style={{ width: `${((index + 1) / count) * 100}%`, background: PIPELINE_GRADIENT }} />

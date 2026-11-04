@@ -5,3 +5,4 @@ export * from "./sync";
 export * from "./player";
 export * from "./presenter-view";
 export * from "./print-deck";
+export * from "./live";
