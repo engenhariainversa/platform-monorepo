@@ -70,6 +70,7 @@ services:
       - ./apps/cms/lib:/app/apps/cms/lib
       - ./packages/ui/src:/app/packages/ui/src
       - ./packages/graphql/src:/app/packages/graphql/src
+      - ./packages/types/src:/app/packages/types/src
       - ./packages/slides/src:/app/packages/slides/src
     depends_on:
       backend:
@@ -96,6 +97,7 @@ services:
       - ./apps/landing/public:/app/apps/landing/public
       - ./packages/ui/src:/app/packages/ui/src
       - ./packages/graphql/src:/app/packages/graphql/src
+      - ./packages/types/src:/app/packages/types/src
       - ./packages/slides/src:/app/packages/slides/src
 
 volumes:

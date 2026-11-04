@@ -15,6 +15,8 @@ export type ApolloWrapperProps = {
    * Server/Client Component boundary.
    */
   tokenCookieName?: string;
+  /** Open a websocket for live sessions (subscriptions). Lazy: connects on first use. */
+  live?: boolean;
 };
 
 /**
@@ -26,6 +28,7 @@ export function ApolloWrapper({
   children,
   uri = GRAPHQL_URL,
   tokenCookieName,
+  live = false,
 }: ApolloWrapperProps) {
   const [client] = useState(() =>
     createApolloClient({
@@ -33,6 +36,7 @@ export function ApolloWrapper({
       getToken: tokenCookieName
         ? () => getAuthToken(tokenCookieName)
         : undefined,
+      live,
     }),
   );
   return <ApolloProvider client={client}>{children}</ApolloProvider>;
