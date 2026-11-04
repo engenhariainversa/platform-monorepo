@@ -7,6 +7,7 @@ import {
   GRAPHQL_URL,
   PRESENTER_TOKEN_STORAGE_KEY,
   SOCKET_CLOSE_FORBIDDEN,
+  SOCKET_CLOSE_TOO_MANY,
   clearPresenterToken,
   createApolloClient,
   extractPresenterToken,
@@ -57,11 +58,14 @@ export function LinkGone() {
  * open) replaces everything with the "gone" screen.
  */
 const GoneContext = createContext<() => void>(() => {});
+/** True once the server refused the live socket (4429): the page works, but not live. */
+const SocketBlockedContext = createContext(false);
 
 export function PresenterLinkProvider({ children }: { children: ReactNode }) {
   // undefined = not read yet (first client render); null = no token.
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [gone, setGone] = useState(false);
+  const [socketBlocked, setSocketBlocked] = useState(false);
 
   useEffect(() => setToken(readPresenterToken()), []);
 
@@ -80,6 +84,7 @@ export function PresenterLinkProvider({ children }: { children: ReactNode }) {
             live: {
               onClosed: (code) => {
                 if (code === SOCKET_CLOSE_FORBIDDEN) markGone();
+                else if (code === SOCKET_CLOSE_TOO_MANY) setSocketBlocked(true);
               },
             },
           })
@@ -93,7 +98,9 @@ export function PresenterLinkProvider({ children }: { children: ReactNode }) {
   if (!client || gone) return <LinkGone />;
   return (
     <GoneContext.Provider value={markGone}>
-      <ApolloProvider client={client}>{children}</ApolloProvider>
+      <SocketBlockedContext.Provider value={socketBlocked}>
+        <ApolloProvider client={client}>{children}</ApolloProvider>
+      </SocketBlockedContext.Provider>
     </GoneContext.Provider>
   );
 }
@@ -147,6 +154,7 @@ export function PresenterLinkDeck({ view }: { view: "player" | "presenter" }) {
     pollInterval: 30_000,
   });
   const markGone = useContext(GoneContext);
+  const socketBlocked = useContext(SocketBlockedContext);
   const unauthenticated = isUnauthenticatedError(error);
   useEffect(() => {
     if (unauthenticated) markGone();
@@ -177,5 +185,17 @@ export function PresenterLinkDeck({ view }: { view: "player" | "presenter" }) {
       </div>
     );
   }
-  return <LiveDeck presentation={presentation} slides={slides} context={context} view={view} />;
+  return (
+    <>
+      {socketBlocked && (
+        <div
+          role="status"
+          className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-error-container px-4 py-2 text-center text-sm text-on-error-container"
+        >
+          Conexão ao vivo indisponível: muitas conexões deste endereço
+        </div>
+      )}
+      <LiveDeck presentation={presentation} slides={slides} context={context} view={view} />
+    </>
+  );
 }
