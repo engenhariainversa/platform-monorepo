@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { extractPresenterToken } from "./presenter-token";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { PRESENTER_TOKEN_STORAGE_KEY, clearPresenterToken, extractPresenterToken } from "./presenter-token";
 
 describe("extractPresenterToken", () => {
   it("reads the token from the URL fragment", () => {
@@ -10,5 +10,24 @@ describe("extractPresenterToken", () => {
     expect(extractPresenterToken("")).toBeNull();
     expect(extractPresenterToken("#t=ei_apikey")).toBeNull();
     expect(extractPresenterToken("#t=eip_bad token")).toBeNull();
+  });
+});
+
+describe("clearPresenterToken", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("removes the stored token", () => {
+    const removeItem = vi.fn();
+    vi.stubGlobal("sessionStorage", { removeItem });
+    clearPresenterToken();
+    expect(removeItem).toHaveBeenCalledWith(PRESENTER_TOKEN_STORAGE_KEY);
+  });
+  it("does not throw when storage is blocked", () => {
+    vi.stubGlobal("sessionStorage", {
+      removeItem: () => {
+        throw new Error("SecurityError");
+      },
+    });
+    expect(() => clearPresenterToken()).not.toThrow();
   });
 });

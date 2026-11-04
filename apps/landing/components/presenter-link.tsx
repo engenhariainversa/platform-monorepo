@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   GET_PRESENTATION_FOR_PRESENTER,
   GET_SOCIAL_LINKS,
   GRAPHQL_URL,
   PRESENTER_TOKEN_STORAGE_KEY,
   SOCKET_CLOSE_FORBIDDEN,
+  clearPresenterToken,
   createApolloClient,
   extractPresenterToken,
   getUploadUrl,
@@ -55,12 +56,20 @@ export function LinkGone() {
  * and over the socket. A 4403 close (link revoked or expired while the page is
  * open) replaces everything with the "gone" screen.
  */
+const GoneContext = createContext<() => void>(() => {});
+
 export function PresenterLinkProvider({ children }: { children: ReactNode }) {
   // undefined = not read yet (first client render); null = no token.
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [gone, setGone] = useState(false);
 
   useEffect(() => setToken(readPresenterToken()), []);
+
+  // The link is dead: forget its token so a reload does not retry it.
+  const markGone = useCallback(() => {
+    clearPresenterToken();
+    setGone(true);
+  }, []);
 
   const client = useMemo(
     () =>
@@ -70,19 +79,23 @@ export function PresenterLinkProvider({ children }: { children: ReactNode }) {
             getToken: () => token,
             live: {
               onClosed: (code) => {
-                if (code === SOCKET_CLOSE_FORBIDDEN) setGone(true);
+                if (code === SOCKET_CLOSE_FORBIDDEN) markGone();
               },
             },
           })
         : null,
-    [token],
+    [token, markGone],
   );
 
   // Render nothing until the token left the address bar: the player writes the
   // slide number to the hash and must not see "#t=…".
   if (token === undefined) return null;
   if (!client || gone) return <LinkGone />;
-  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+  return (
+    <GoneContext.Provider value={markGone}>
+      <ApolloProvider client={client}>{children}</ApolloProvider>
+    </GoneContext.Provider>
+  );
 }
 
 function LiveDeck({
@@ -133,6 +146,11 @@ export function PresenterLinkDeck({ view }: { view: "player" | "presenter" }) {
     fetchPolicy: "network-only",
     pollInterval: 30_000,
   });
+  const markGone = useContext(GoneContext);
+  const unauthenticated = isUnauthenticatedError(error);
+  useEffect(() => {
+    if (unauthenticated) markGone();
+  }, [unauthenticated, markGone]);
   const { data: social } = useQuery<{ socialLinks: SocialLink[] }>(GET_SOCIAL_LINKS);
 
   const presentation = data?.presentationForPresenter ?? null;
@@ -151,7 +169,7 @@ export function PresenterLinkDeck({ view }: { view: "player" | "presenter" }) {
     [social],
   );
 
-  if (isUnauthenticatedError(error)) return <LinkGone />;
+  if (unauthenticated) return <LinkGone />;
   if (!presentation) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-surface-container-lowest text-on-surface-variant">
