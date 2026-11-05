@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body className="technical-grid min-h-screen">
-        <ApolloWrapper>{children}</ApolloWrapper>
+        <ApolloWrapper live>{children}</ApolloWrapper>
       </body>
     </html>
   );

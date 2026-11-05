@@ -27,6 +27,9 @@ export interface UpdatePresentationData {
 
 const WITH_SLIDES = { slides: { orderBy: { order: "asc" as const } } };
 const MAX_TITLE = 120;
+/** Slugs taken by static routes under /apresentacoes on the landing. */
+export const RESERVED_SLUGS = ["controle"];
+const isUsableSlug = (slug: string) => isValidSlug(slug) && !RESERVED_SLUGS.includes(slug);
 /** Mirrors the limit enforced by `isValidSlug` in @repo/slides. */
 const MAX_SLUG = 80;
 
@@ -60,6 +63,17 @@ const isUniqueViolation = (e: unknown) =>
 
 @Injectable()
 export class PresentationsService {
+  private readonly unpublishedListeners = new Set<(presentationId: string) => void>();
+
+  /** Called when a presentation is trashed or stops being PUBLIC (ends its live session). */
+  onUnpublished(listener: (presentationId: string) => void): void {
+    this.unpublishedListeners.add(listener);
+  }
+
+  private notifyUnpublished(presentationId: string): void {
+    for (const listener of this.unpublishedListeners) listener(presentationId);
+  }
+
   list(trash: boolean): Promise<PresentationWithSlides[]> {
     return prisma.presentation.findMany({
       where: { deletedAt: trash ? { not: null } : null },
@@ -119,11 +133,13 @@ export class PresentationsService {
     if (input.description !== undefined) data.description = input.description?.trim() || null;
     if (input.visibility != null) data.visibility = input.visibility;
     if (input.slug != null && input.slug !== current.slug) {
-      if (!isValidSlug(input.slug)) throw invalidSlug(input.slug);
+      if (!isUsableSlug(input.slug)) throw invalidSlug(input.slug);
       data.slug = input.slug;
     }
     try {
-      return await prisma.presentation.update({ where: { id }, data, include: WITH_SLIDES });
+      const updated = await prisma.presentation.update({ where: { id }, data, include: WITH_SLIDES });
+      if (updated.visibility !== "PUBLIC") this.notifyUnpublished(id);
+      return updated;
     } catch (e) {
       if (isUniqueViolation(e)) throw slugTaken(input.slug as string);
       throw e;
@@ -154,6 +170,7 @@ export class PresentationsService {
     const p = await prisma.presentation.findUnique({ where: { id } });
     if (!p) throw notFound("Apresentação não encontrada");
     if (!p.deletedAt) await prisma.presentation.update({ where: { id }, data: { deletedAt: new Date() } });
+    this.notifyUnpublished(id);
     return true;
   }
 
@@ -178,7 +195,7 @@ export class PresentationsService {
   /** Explicit slugs must be valid and free; generated ones get -2, -3… */
   private async resolveSlug(explicit: string | null | undefined, title: string): Promise<string> {
     if (explicit) {
-      if (!isValidSlug(explicit)) throw invalidSlug(explicit);
+      if (!isUsableSlug(explicit)) throw invalidSlug(explicit);
       const taken = await prisma.presentation.findUnique({ where: { slug: explicit } });
       if (taken) throw slugTaken(explicit);
       return explicit;
@@ -188,7 +205,7 @@ export class PresentationsService {
       where: { slug: { startsWith: base } },
       select: { slug: true },
     });
-    const used = new Set(existing.map((e) => e.slug));
+    const used = new Set([...existing.map((e) => e.slug), ...RESERVED_SLUGS]);
     if (!used.has(base)) return base;
     for (let n = 2; ; n++) {
       const candidate = withSuffix(base, n);

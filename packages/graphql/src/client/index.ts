@@ -4,3 +4,5 @@ export * from "./create-client";
 export * from "./upload";
 export * from "./errors";
 export * from "./document-text";
+export * from "./ws";
+export * from "./presenter-token";

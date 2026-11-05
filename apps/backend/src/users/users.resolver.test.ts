@@ -29,6 +29,30 @@ describe("deleteUser", () => {
     expect(await prisma.apiKey.count()).toBe(0);
   });
 
+  it("deletes a user who only minted presenter links, along with the links", async () => {
+    const adminUser = await createUser({ admin: true });
+    const admin = jwtFor(app, adminUser);
+    const user = await createUser({ roleName: "AUTHENTICATED" });
+    const deck = await prisma.presentation.create({ data: { slug: "deck", title: "Deck", createdById: adminUser.id } });
+    await prisma.presenterLink.create({
+      data: {
+        presentationId: deck.id,
+        name: "l",
+        prefix: "abcdefgh",
+        hash: "h3",
+        createdById: user.id,
+        expiresAt: new Date(Date.now() + 3_600_000),
+      },
+    });
+
+    const res = await gql(app, DELETE, { id: user.id }, admin);
+    expect(res.errors).toBeUndefined();
+    expect(res.data.deleteUser).toBe(true);
+    expect(await prisma.user.findUnique({ where: { id: user.id } })).toBeNull();
+    expect(await prisma.presenterLink.count()).toBe(0);
+    expect(await prisma.presentation.count()).toBe(1);
+  });
+
   it("refuses to delete a user who owns presentations, and deletes nothing", async () => {
     const admin = jwtFor(app, await createUser({ admin: true }));
     const user = await createUser({ roleName: "AUTHENTICATED" });

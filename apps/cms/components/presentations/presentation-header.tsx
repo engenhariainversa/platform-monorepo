@@ -6,6 +6,7 @@ import { isValidSlug } from "@repo/slides";
 import type { Presentation, PresentationVisibility } from "@repo/types";
 import { publicPresentationUrl } from "../../lib/landing-url";
 import { inputClass } from "./field-input";
+import { PresenterLinksPanel } from "./presenter-links-panel";
 import type { SaveStatus } from "./editor-sync";
 
 export type { SaveStatus };
@@ -86,6 +87,7 @@ export function PresentationHeader({ presentation, status, onSave, metaError }: 
         <div className="flex gap-2 ml-auto">
           <a href={`/apresentar/${presentation.id}`} target="_blank" rel="noreferrer" className="text-sm py-2 px-3 rounded-lg bg-primary text-on-primary font-bold">Apresentar</a>
           <a href={`/apresentar/${presentation.id}/print`} target="_blank" rel="noreferrer" className={link}>PDF</a>
+          <PresenterLinksPanel presentationId={presentation.id} />
           {presentation.visibility === "PUBLIC" && (
             <button
               onClick={async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { SlideRenderer, type SlideContext } from "./slide-renderer";
 import { formatElapsed, visibleSlides, type PlayerSlide } from "./navigation";
 import { navActionForKey, useDeckNavigation } from "./use-deck-navigation";
@@ -10,9 +10,13 @@ export type PresenterViewProps = {
   title: string;
   slides: PlayerSlide[];
   context?: SlideContext;
+  /** Live block shown above the notes (3b). */
+  livePanel?: ReactNode;
+  /** Rendered over the current-slide preview (laser). */
+  overlay?: ReactNode;
 };
 
-export function PresenterView({ presentationId, title, slides, context }: PresenterViewProps) {
+export function PresenterView({ presentationId, title, slides, context, livePanel, overlay }: PresenterViewProps) {
   const shown = useMemo(() => visibleSlides(slides), [slides]);
   const { index, count, dispatch } = useDeckNavigation(presentationId, shown.length);
   const [now, setNow] = useState(() => Date.now());
@@ -72,7 +76,7 @@ export function PresenterView({ presentationId, title, slides, context }: Presen
         <section className="flex flex-col gap-2">
           <p className="font-label text-xs uppercase tracking-wider text-on-surface-variant">Atual</p>
           {current ? (
-            <SlideRenderer template={current.template} content={current.content} slideNumber={index + 1} context={context} />
+            <SlideRenderer template={current.template} content={current.content} slideNumber={index + 1} context={context} overlay={overlay} />
           ) : (
             <p className="text-on-surface-variant">Sem slides visíveis.</p>
           )}
@@ -83,6 +87,7 @@ export function PresenterView({ presentationId, title, slides, context }: Presen
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4">
+          {livePanel}
           <div>
             <p className="mb-2 font-label text-xs uppercase tracking-wider text-on-surface-variant">Próximo</p>
             {next ? (

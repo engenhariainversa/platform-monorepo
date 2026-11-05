@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body className="bg-surface text-on-surface font-body min-h-screen">
-        <ApolloWrapper tokenCookieName="cms_token">{children}</ApolloWrapper>
+        <ApolloWrapper tokenCookieName="cms_token" live>{children}</ApolloWrapper>
       </body>
     </html>
   );

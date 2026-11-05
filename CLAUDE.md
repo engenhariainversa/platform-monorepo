@@ -121,3 +121,8 @@ health check, runs the migration drift check and prunes images.
 Required secrets: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL`
 (host `db`), `JWT_SECRET`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_GRAPHQL_PATH`. Keep the
 list in `.env.example` in sync when adding one.
+
+Live presentations use GraphQL subscriptions over a websocket on the backend's
+`/graphql`. The nginx and Cloudflare requirements of the production server are in
+`docs/infra/websockets.md`; live state is in memory, so the backend runs as a single
+instance.

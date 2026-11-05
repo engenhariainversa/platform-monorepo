@@ -23,14 +23,17 @@
     "@repo/slides": "workspace:*",
     "bcryptjs": "^3.0.3",
     "graphql": "^16.14.2",
+    "graphql-subscriptions": "^3.0.0",
     "graphql-type-json": "^0.3.2",
+    "graphql-ws": "^6.0.8",
     "multer": "^2.2.0",
     "passport": "^0.7.0",
     "passport-custom": "^1.1.1",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "ws": "^8.20.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11",
@@ -44,6 +47,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^11.0.0",
+    "@types/ws": "^8.5.13",
     "supertest": "^7.0.0",
     "typescript": "^5.4.5",
     "unplugin-swc": "^1.5.1",

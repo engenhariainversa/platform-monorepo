@@ -107,6 +107,27 @@ type SlideTemplateInfo {
   example: JSON!
 }
 
+type PresenterLink {
+  id: ID!
+  name: String!
+
+  """First 8 characters after eip_, for identification"""
+  prefix: String!
+  expiresAt: DateTime!
+  lastUsedAt: DateTime
+  revokedAt: DateTime
+  createdAt: DateTime!
+}
+
+type CreatedPresenterLink {
+  presenterLink: PresenterLink!
+
+  """
+  The presenter page URL with the token in the fragment. Returned only here.
+  """
+  url: String!
+}
+
 type LiveType {
   id: ID!
   label: String!
@@ -203,22 +224,98 @@ type DashboardStatsType {
   lives: Int!
 }
 
+type LivePointer {
+  """0..1 across the 1920×1080 canvas"""
+  x: Float!
+  y: Float!
+  visible: Boolean!
+}
+
+type ReactionCount {
+  kind: ReactionKind!
+  count: Int!
+}
+
+enum ReactionKind {
+  CLAP
+  FIRE
+  MIND_BLOWN
+  LAUGH
+  HEART
+  THINKING
+}
+
+type LiveState {
+  isLive: Boolean!
+  startedAt: DateTime
+  slideId: ID
+  showViewerCount: Boolean!
+  showReactionsOnScreen: Boolean!
+
+  """null for the audience while the counter is hidden"""
+  viewerCount: Int
+
+  """Presenters only"""
+  peakViewers: Int
+
+  """Presenters only"""
+  reactionTotals: [ReactionCount!]
+}
+
+type LiveEvent {
+  type: LiveEventType!
+
+  """STARTED, SLIDE"""
+  slideId: ID
+
+  """POINTER"""
+  pointer: LivePointer
+
+  """VIEWERS"""
+  viewerCount: Int
+
+  """VIEWERS, presenters only"""
+  peakViewers: Int
+
+  """REACTIONS"""
+  reactions: [ReactionCount!]
+
+  """OPTIONS"""
+  showViewerCount: Boolean
+
+  """OPTIONS"""
+  showReactionsOnScreen: Boolean
+}
+
+enum LiveEventType {
+  STARTED
+  SLIDE
+  POINTER
+  VIEWERS
+  REACTIONS
+  OPTIONS
+  ENDED
+}
+
 type Query {
   hello: String!
   pages: [CmsPageType!]!
-  roles: [RoleType!]!
-  permissionsForRole(roleId: String!): [ResourcePermissions!]!
-  publicResources: [PublicResourceType!]!
-  availableResources: [String!]!
-  users: [UserType!]!
-  user(id: String!): UserType
+  liveState(slug: String!): LiveState!
   hasAdmin: Boolean!
   me: UserType!
+  users: [UserType!]!
+  user(id: String!): UserType
   apiKeys: [ApiKey!]!
+  presenterLinks(presentationId: ID!): [PresenterLink!]!
+  presentationForPresenter: Presentation!
   presentations(trash: Boolean = false): [Presentation!]!
   presentation(id: ID!): Presentation
   presentationBySlug(slug: String!): Presentation
   slideTemplates: [SlideTemplateInfo!]!
+  roles: [RoleType!]!
+  permissionsForRole(roleId: String!): [ResourcePermissions!]!
+  publicResources: [PublicResourceType!]!
+  availableResources: [String!]!
   live: LiveType
   episodes: [EpisodeType!]!
   heroSection: HeroSectionType
@@ -231,19 +328,22 @@ type Query {
 
 type Mutation {
   createPage(slug: String!, title: String!, content: String!): CmsPageType!
-  createRole(input: CreateRoleInput!): RoleType!
-  updateRole(id: String!, input: UpdateRoleInput!): RoleType!
-  deleteRole(id: String!): Boolean!
-  togglePermission(input: TogglePermissionInput!): Boolean!
-  togglePublicResource(input: TogglePublicResourceInput!): Boolean!
+  startLive(presentationId: ID!, slideId: ID!): LiveState!
+  stopLive(presentationId: ID!): Boolean!
+  setLiveSlide(presentationId: ID!, slideId: ID!): Boolean!
+  movePointer(presentationId: ID!, x: Float!, y: Float!, visible: Boolean!): Boolean!
+  setLiveOptions(presentationId: ID!, showViewerCount: Boolean, showReactionsOnScreen: Boolean): LiveState!
+  sendReaction(slug: String!, kind: ReactionKind!): Boolean!
+  login(input: LoginInput!): AuthPayload!
+  setupAdmin(input: SetupAdminInput!): AuthPayload!
   createUser(input: CreateUserInput!): UserType!
   updateUser(id: String!, input: UpdateUserInput!): UserType!
   updateUserRole(id: String!, roleName: String!): UserType!
   deleteUser(id: String!): Boolean!
-  login(input: LoginInput!): AuthPayload!
-  setupAdmin(input: SetupAdminInput!): AuthPayload!
   createApiKey(name: String!, expiresIn: ApiKeyExpiry!): CreatedApiKey!
   revokeApiKey(id: ID!): ApiKey!
+  createPresenterLink(presentationId: ID!, name: String!, expiresIn: PresenterLinkExpiry!): CreatedPresenterLink!
+  revokePresenterLink(id: ID!): PresenterLink!
   createPresentation(input: CreatePresentationInput!): Presentation!
   updatePresentation(id: ID!, input: UpdatePresentationInput!): Presentation!
   duplicatePresentation(id: ID!): Presentation!
@@ -255,6 +355,11 @@ type Mutation {
   updateSlide(id: ID!, input: UpdateSlideInput!): Slide!
   deleteSlide(id: ID!): Boolean!
   reorderSlides(presentationId: ID!, ids: [ID!]!): [Slide!]!
+  createRole(input: CreateRoleInput!): RoleType!
+  updateRole(id: String!, input: UpdateRoleInput!): RoleType!
+  deleteRole(id: String!): Boolean!
+  togglePermission(input: TogglePermissionInput!): Boolean!
+  togglePublicResource(input: TogglePublicResourceInput!): Boolean!
   upsertLive(input: UpsertLiveInput!): LiveType!
   createEpisode(input: CreateEpisodeInput!): EpisodeType!
   updateEpisode(id: String!, input: UpdateEpisodeInput!): EpisodeType!
@@ -270,25 +375,17 @@ type Mutation {
   reorderSocialLinks(ids: [String!]!): [SocialLinkType!]!
 }
 
-input CreateRoleInput {
-  name: String!
-  label: String!
-  description: String
+input LoginInput {
+  identifier: String!
+  password: String!
 }
 
-input UpdateRoleInput {
-  label: String
-  description: String
-}
-
-input TogglePermissionInput {
-  roleId: String!
-  resource: String!
-  action: String!
-}
-
-input TogglePublicResourceInput {
-  resource: String!
+input SetupAdminInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  username: String!
+  password: String!
 }
 
 input CreateUserInput {
@@ -307,21 +404,15 @@ input UpdateUserInput {
   roleName: String
 }
 
-input LoginInput {
-  identifier: String!
-  password: String!
-}
-
-input SetupAdminInput {
-  firstName: String!
-  lastName: String!
-  email: String!
-  username: String!
-  password: String!
-}
-
 enum ApiKeyExpiry {
   ONE_HOUR
+  ONE_DAY
+  SEVEN_DAYS
+}
+
+enum PresenterLinkExpiry {
+  TWO_HOURS
+  TWELVE_HOURS
   ONE_DAY
   SEVEN_DAYS
 }
@@ -353,6 +444,27 @@ input UpdateSlideInput {
   content: JSON
   notes: String
   hidden: Boolean
+}
+
+input CreateRoleInput {
+  name: String!
+  label: String!
+  description: String
+}
+
+input UpdateRoleInput {
+  label: String
+  description: String
+}
+
+input TogglePermissionInput {
+  roleId: String!
+  resource: String!
+  action: String!
+}
+
+input TogglePublicResourceInput {
+  resource: String!
 }
 
 input UpsertLiveInput {
@@ -424,4 +536,8 @@ input UpdateSocialLinkInput {
   label: String
   url: String
   order: Int
+}
+
+type Subscription {
+  liveEvents(slug: String!): LiveEvent!
 }
