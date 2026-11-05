@@ -23,8 +23,8 @@
 - Ports stay fixed: backend 4050, CMS 4051, landing 4052.
 - User-facing copy is Brazilian Portuguese; code, identifiers and comments are English.
 - Presenter link token: `eip_` + 32 random bytes base64url; only the SHA-256 hex hash is stored. Expiries (exact): `TWO_HOURS`, `TWELVE_HOURS`, `ONE_DAY`, `SEVEN_DAYS`.
-- Websocket close codes (exact): `4403` (invalid/revoked/expired credential, foreign origin), `4429` (more than 10 concurrent sockets from one IP).
-- Rate limits (exact): pointer ≤ 40 updates/s per session (25 ms minimum interval); reactions per **socket**: 1 per 300 ms and at most 10 per 5 s; `REACTIONS` aggregated in 250 ms windows; `VIEWERS` at most one event every 2 s per session; ≤ 10 sockets per IP.
+- Websocket close codes (exact): `4403` (invalid/revoked/expired credential, foreign origin), `4429` (more than 200 concurrent sockets from one IP; was 10 until EI-25 follow-up).
+- Rate limits (exact): pointer ≤ 40 updates/s per session (25 ms minimum interval); reactions per **socket**: 1 per 300 ms and at most 10 per 5 s; `REACTIONS` aggregated in 250 ms windows; `VIEWERS` at most one event every 2 s per session; ≤ 200 sockets per IP (was 10).
 - Reaction kinds (exact, in this order): `CLAP` 👏, `FIRE` 🔥, `MIND_BLOWN` 🤯, `LAUGH` 😂, `HEART` ❤️, `THINKING` 🤔.
 - Live event types (exact): `STARTED`, `SLIDE`, `POINTER`, `VIEWERS`, `REACTIONS`, `OPTIONS`, `ENDED`.
 - Only `PUBLIC`, non-trashed presentations can go live. Error message (exact): `"Torne a apresentação pública para transmitir"`. Gone-link message (exact): `"Link revogado ou expirado"`.

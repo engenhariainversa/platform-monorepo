@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { LINK_GONE } from "../presenter-links/presenter-links.service";
 
-export const MAX_SOCKETS_PER_IP = 10;
+// Concurrent sockets, not a time window. An in-person audience shares the venue's
+// public IP, so the cap must hold a full room; abuse control per IP + viewer is a follow-up.
+export const MAX_SOCKETS_PER_IP = 200;
 /** Invalid, revoked or expired credential; foreign origin. Clients stop reconnecting. */
 export const CLOSE_FORBIDDEN = 4403;
 /** More than MAX_SOCKETS_PER_IP concurrent sockets from one IP. */

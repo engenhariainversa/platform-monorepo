@@ -9,11 +9,11 @@ const entry = (socketId: string, ip = "1.1.1.1", extra: Record<string, unknown> 
 });
 
 describe("SocketRegistry", () => {
-  it("accepts up to 10 sockets per IP and refuses the 11th", () => {
+  it("accepts up to MAX_SOCKETS_PER_IP sockets per IP and refuses the next one", () => {
     const registry = new SocketRegistry();
     for (let i = 0; i < MAX_SOCKETS_PER_IP; i++) expect(registry.add(entry(`s${i}`))).toBe(true);
-    expect(registry.add(entry("s10"))).toBe(false);
-    expect(registry.countForIp("1.1.1.1")).toBe(10);
+    expect(registry.add(entry(`s${MAX_SOCKETS_PER_IP}`))).toBe(false);
+    expect(registry.countForIp("1.1.1.1")).toBe(MAX_SOCKETS_PER_IP);
     expect(registry.add(entry("other", "2.2.2.2"))).toBe(true);
   });
 
