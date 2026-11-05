@@ -26,9 +26,9 @@ proxy_send_timeout 3600s;
 
 Then `nginx -t && nginx -s reload` (or the container equivalent).
 
-`CF-Connecting-IP` matters: the backend caps each IP at 10 concurrent sockets. Without
-the header every visitor appears to come from the proxy's address and the 11th viewer is
-refused (close code `4429`).
+`CF-Connecting-IP` matters: the backend caps each IP at 200 concurrent sockets (an
+in-person audience shares the venue's public IP). Without the header every visitor appears
+to come from the proxy's address and the 201st viewer is refused (close code `4429`).
 
 ## 2. Cloudflare
 

@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp, createUser, errorCode, gql, jwtFor, resetDatabase } from "../../test/helpers";
 import { closeCodeOf, listen, openSocket, wsClient, wsRequest } from "../../test/ws";
+import { MAX_SOCKETS_PER_IP } from "./socket-registry";
 
 const CREATE_KEY = `mutation { createApiKey(name: "ws", expiresIn: ONE_HOUR) { token apiKey { id } } }`;
 const REVOKE_KEY = `mutation ($id: ID!) { revokeApiKey(id: $id) { id } }`;
@@ -72,10 +73,10 @@ describe("graphql-ws transport", () => {
     disposables.push(noOrigin.client);
   });
 
-  it("caps concurrent sockets per IP at 10 (4429) and frees the slot on close", async () => {
+  it("caps concurrent sockets per IP at MAX_SOCKETS_PER_IP (4429) and frees the slot on close", async () => {
     const headers = { "CF-Connecting-IP": "203.0.113.7" };
     const open = [];
-    for (let i = 0; i < 10; i++) open.push(await openSocket(url, {}, headers));
+    for (let i = 0; i < MAX_SOCKETS_PER_IP; i++) open.push(await openSocket(url, {}, headers));
     disposables.push(...open.map((o) => o.client));
     expect(await closeCodeOf(url, {}, headers)).toBe(4429);
 
@@ -83,5 +84,5 @@ describe("graphql-ws transport", () => {
     await open[0].closed;
     const again = await openSocket(url, {}, headers);
     disposables.push(again.client);
-  });
+  }, 30_000);
 });

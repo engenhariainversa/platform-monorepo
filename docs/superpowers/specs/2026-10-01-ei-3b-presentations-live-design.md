@@ -167,8 +167,9 @@ Migration `add_presenter_links`. Token `eip_` + 32 random bytes base64url.
   live. Returns `false` (no error) when throttled or not live.
 - **Rate limits** (per **socket**; `viewerId` is client-chosen and not trusted for this):
   token bucket of 1 per 300 ms with a burst of 10 per 5 s.
-- **Connection cap**: at most 10 concurrent sockets per IP; the 11th is rejected in
-  `onConnect` (close code `4429`).
+- **Connection cap**: at most 200 concurrent sockets per IP; the 201st is rejected in
+  `onConnect` (close code `4429`). Raised from 10 after EI-3b shipped: an in-person
+  audience shares the venue's public IP. Abuse control per IP + viewer is a follow-up.
 - **Aggregation**: reactions are summed in 250 ms windows and published as
   `REACTIONS { counts }` — at most 4 events/s per session regardless of audience size.
 - Totals live in the session and disappear when it ends.
