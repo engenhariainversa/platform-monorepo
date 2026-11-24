@@ -242,6 +242,9 @@ importers:
       typescript:
         specifier: ^5.4.5
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/node@20.19.43)(jiti@1.21.7)(terser@5.48.0)(tsx@4.22.4)
 
   packages/database:
     dependencies:
@@ -6788,6 +6791,10 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.4
 
+  fdir@6.5.0(picomatch@4.0.7):
+    optionalDependencies:
+      picomatch: 4.0.7
+
   file-entry-cache@6.0.1:
     dependencies:
       flat-cache: 3.2.0
@@ -8540,8 +8547,8 @@ snapshots:
   vite@7.3.6(@types/node@20.19.43)(jiti@1.21.7)(terser@5.48.0)(tsx@4.22.4):
     dependencies:
       esbuild: 0.28.1
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
       postcss: 8.5.15
       rollup: 4.63.6
       tinyglobby: 0.2.17
@@ -8567,7 +8574,7 @@ snapshots:
       expect-type: 1.4.0
       magic-string: 0.30.17
       pathe: 2.0.3
-      picomatch: 4.0.4
+      picomatch: 4.0.7
       std-env: 3.10.0
       tinybench: 2.9.0
       tinyexec: 0.3.2

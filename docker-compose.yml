@@ -87,6 +87,9 @@ services:
       # Server-side fetches (public decks) go straight to the backend over the
       # compose network; NEXT_PUBLIC_API_URL is the browser-facing address.
       - API_INTERNAL_URL=http://backend:4050
+      # Public origin, for canonical and og:image URLs of shared decks. Read at
+      # request time (not NEXT_PUBLIC_*), so changing it needs no rebuild.
+      - LANDING_URL=https://engenhariainversa.com.br
     restart: unless-stopped
 
 volumes:
