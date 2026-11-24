@@ -63,26 +63,83 @@ export function presentationUrl(slug: string, base: string = siteUrl()): string 
 }
 
 /**
+ * The version in a deck's image URL: its last update, which moves on every
+ * edit, slide change, visibility change and trip to the trash. `null` when the
+ * date does not parse (the URL then goes without one).
+ */
+export function presentationImageVersion(presentation: Presentation): string | null {
+  const version = Date.parse(presentation.updatedAt);
+  return Number.isNaN(version) ? null : String(version);
+}
+
+/**
+ * Whether `?v=` names the deck's current version. The image route serves only
+ * that one, so a copy cached under an older URL (say, from before the deck
+ * turned private) is never refreshed, and a request for it is a 404.
+ */
+export function isCurrentImageVersion(presentation: Presentation, version: string | null): boolean {
+  return version === presentationImageVersion(presentation);
+}
+
+/**
  * The image URL carries the deck's last update so scrapers that cache by URL
- * (WhatsApp, X) pick up a new card after the cover is edited.
+ * (WhatsApp, X) pick up a new card after the cover is edited, and so the
+ * Cloudflare copy of a deck that turns private is never served again.
  */
 export function presentationImageUrl(presentation: Presentation, base: string = siteUrl()): string {
-  const version = Date.parse(presentation.updatedAt);
-  const suffix = Number.isNaN(version) ? "" : `?v=${version}`;
+  const version = presentationImageVersion(presentation);
+  const suffix = version === null ? "" : `?v=${version}`;
   return `${presentationUrl(presentation.slug, base)}/og.png${suffix}`;
 }
 
 /**
- * Metadata for /apresentacoes/<slug>. A deck that is missing or not public is
- * `null` here and gets the same bare "not found" metadata either way, so the
- * response says nothing about a private deck — not even that it exists.
+ * Cache-Control of a public deck's card. Five minutes at the edge bounds how
+ * long a deck that turns private can still show its title there; nothing in
+ * the browser and no stale-while-revalidate, which would serve that title on
+ * purpose after the change.
+ */
+export const DECK_CARD_CACHE = "public, max-age=0, s-maxage=300";
+
+/** Fixed cards that say nothing about a deck. Paths outside /apresentacoes so no slug can shadow them. */
+export const PRIVATE_CARD_PATH = "/og/apresentacao-privada.png";
+export const PRESENTER_CARD_PATH = "/og/link-de-apresentador.png";
+
+export const PRIVATE_COVER: CoverInfo = { label: null, title: "Apresentação privada", subtitle: null, date: null };
+export const PRESENTER_COVER: CoverInfo = { label: null, title: "Link de apresentador", subtitle: null, date: null };
+
+function fixedCard(title: string, description: string, imagePath: string, base: string): Metadata {
+  const image = { url: `${base}${imagePath}`, ...OG_IMAGE_SIZE, type: "image/png", alt: `${title} — ${SITE_NAME}` };
+  return {
+    title: `${title} | ${SITE_NAME}`,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: { type: "website", siteName: SITE_NAME, locale: "pt_BR", title, description, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
+
+/** Metadata of the presenter link page. Its token is in the URL fragment, which no scraper sees. */
+export function presenterLinkMetadata(base: string = siteUrl()): Metadata {
+  return {
+    ...fixedCard("Link de apresentador", `Controle de uma apresentação no ${SITE_NAME}.`, PRESENTER_CARD_PATH, base),
+    referrer: "no-referrer",
+  };
+}
+
+/**
+ * Metadata for /apresentacoes/<slug>. A deck that is missing, not public or in
+ * the trash is `null` here and gets the same fixed "Apresentação privada" card
+ * either way: no title, no slug, no URL of its own, so the response says
+ * nothing about a private deck — not even that it exists.
  */
 export function presentationMetadata(presentation: Presentation | null, base: string = siteUrl()): Metadata {
   if (!presentation) {
-    return {
-      title: `Apresentação não encontrada | ${SITE_NAME}`,
-      robots: { index: false, follow: false },
-    };
+    return fixedCard(
+      PRIVATE_COVER.title,
+      `Esta apresentação não está disponível publicamente no ${SITE_NAME}.`,
+      PRIVATE_CARD_PATH,
+      base,
+    );
   }
   const description = presentationDescription(presentation);
   const url = presentationUrl(presentation.slug, base);
