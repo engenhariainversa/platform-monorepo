@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Presentation, Slide } from "@repo/types";
 import {
+  DECK_CARD_CACHE,
   coverInfo,
+  isCurrentImageVersion,
+  presenterLinkMetadata,
   ogTitleFontSize,
   presentationDescription,
   presentationImageUrl,
   presentationMetadata,
+  presentationImageVersion,
   presentationUrl,
 } from "./presentation-meta";
 
@@ -143,12 +147,68 @@ describe("presentationMetadata", () => {
     });
   });
 
-  it("leaks nothing when the deck is missing or not public", () => {
+  it("gives a missing, private or trashed deck one fixed card that names nothing", () => {
+    const image = {
+      url: `${BASE}/og/apresentacao-privada.png`,
+      width: 1200,
+      height: 630,
+      type: "image/png",
+      alt: "Apresentação privada — Engenharia Inversa",
+    };
     const metadata = presentationMetadata(null, BASE);
     expect(metadata).toEqual({
-      title: "Apresentação não encontrada | Engenharia Inversa",
+      title: "Apresentação privada | Engenharia Inversa",
+      description: "Esta apresentação não está disponível publicamente no Engenharia Inversa.",
       robots: { index: false, follow: false },
+      openGraph: {
+        type: "website",
+        siteName: "Engenharia Inversa",
+        locale: "pt_BR",
+        title: "Apresentação privada",
+        description: "Esta apresentação não está disponível publicamente no Engenharia Inversa.",
+        images: [image],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Apresentação privada",
+        description: "Esta apresentação não está disponível publicamente no Engenharia Inversa.",
+        images: [image],
+      },
     });
+  });
+});
+
+describe("presenterLinkMetadata", () => {
+  it("shows the fixed presenter card and keeps the page private", () => {
+    const metadata = presenterLinkMetadata(BASE);
+    expect(metadata.title).toBe("Link de apresentador | Engenharia Inversa");
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(metadata.referrer).toBe("no-referrer");
+    expect(metadata.openGraph).toMatchObject({
+      title: "Link de apresentador",
+      images: [{ url: `${BASE}/og/link-de-apresentador.png`, width: 1200, height: 630 }],
+    });
+    expect(metadata.twitter).toMatchObject({ card: "summary_large_image", title: "Link de apresentador" });
+  });
+});
+
+describe("image version", () => {
+  const version = String(Date.parse("2026-10-02T12:00:00.000Z"));
+
+  it("is the last update in milliseconds", () => {
+    expect(presentationImageVersion(deck())).toBe(version);
+    expect(presentationImageVersion(deck({ updatedAt: "not a date" }))).toBeNull();
+  });
+
+  it("accepts only the current version", () => {
+    expect(isCurrentImageVersion(deck(), version)).toBe(true);
+    expect(isCurrentImageVersion(deck(), String(Number(version) - 1))).toBe(false);
+    expect(isCurrentImageVersion(deck(), null)).toBe(false);
+    expect(isCurrentImageVersion(deck({ updatedAt: "not a date" }), null)).toBe(true);
+  });
+
+  it("caches at the edge for five minutes, never stale", () => {
+    expect(DECK_CARD_CACHE).toBe("public, max-age=0, s-maxage=300");
   });
 });
 
